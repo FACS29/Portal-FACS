@@ -1,0 +1,278 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f4f6f8;
+    color:#333;
+    min-height:100vh;
+}
+
+header{
+    background:#ffffff;
+    padding:25px;
+    text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+.logo{
+    width:120px;
+    margin-bottom:10px;
+}
+
+h1{
+    color:#006633;
+    font-size:32px;
+    margin-bottom:8px;
+}
+
+h2{
+    font-size:20px;
+    font-weight:normal;
+    margin-bottom:8px;
+}
+
+h3{
+    font-size:18px;
+    color:#444;
+    margin-bottom:12px;
+}
+
+.actualizacion{
+    margin-top:10px;
+    color:#666;
+    font-size:14px;
+}
+
+.contenedor{
+    max-width:1200px;
+    margin:auto;
+    padding:25px;
+}
+
+.busqueda{
+    background:#ffffff;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.busqueda input{
+    width:350px;
+    max-width:90%;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+}
+
+.busqueda button{
+    padding:12px 20px;
+    margin-left:10px;
+    border:none;
+    border-radius:8px;
+    background:#006633;
+    color:white;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:bold;
+}
+
+.busqueda button:hover{
+    background:#008040;
+}
+
+.card{
+    background:#ffffff;
+    border-radius:12px;
+    padding:25px;
+    margin-bottom:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+.estado{
+    text-align:center;
+    padding:20px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+.estado-titulo{
+    font-size:15px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.estado-valor{
+    font-size:24px;
+    font-weight:bold;
+}
+
+.estado-vigente{
+    background:#e8f7ee;
+    color:#006633;
+}
+
+.estado-paz{
+    background:#eaf2ff;
+    color:#0047ab;
+}
+
+.estado-anulado{
+    background:#eeeeee;
+    color:#555;
+}
+
+.seccion{
+    margin-top:25px;
+}
+
+.seccion h2{
+    color:#006633;
+    border-bottom:2px solid #006633;
+    padding-bottom:8px;
+    margin-bottom:15px;
+    font-size:20px;
+    font-weight:bold;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:15px;
+}
+
+.item{
+    background:#fafafa;
+    border:1px solid #e8e8e8;
+    border-radius:10px;
+    padding:12px;
+}
+
+.etiqueta{
+    font-size:13px;
+    color:#666;
+    font-weight:bold;
+    margin-bottom:6px;
+}
+
+.valor{
+    font-size:15px;
+    color:#222;
+    line-height:1.4;
+}
+
+.afiliado-activo{
+    background:#edf8f1;
+    border-left:5px solid #006633;
+}
+
+.afiliado-retirado{
+    background:#fff5e6;
+    border-left:5px solid #ff9800;
+}
+
+.saldo-destacado{
+    background:#edf8f1;
+    border:2px solid #006633;
+}
+
+.saldo-destacado .valor{
+    font-size:22px;
+    font-weight:bold;
+    color:#006633;
+}
+
+.progreso{
+    width:100%;
+    height:25px;
+    background:#d9d9d9;
+    border-radius:30px;
+    overflow:hidden;
+    margin-top:10px;
+}
+
+.barra{
+    height:100%;
+    background:#006633;
+    width:0%;
+}
+
+.resumen-amortizacion{
+    margin-top:12px;
+    color:#555;
+    font-size:14px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+
+th{
+    background:#006633;
+    color:white;
+    padding:10px;
+    text-align:center;
+    font-size:14px;
+}
+
+td{
+    border:1px solid #ddd;
+    padding:10px;
+    text-align:center;
+    vertical-align:middle;
+    font-size:14px;
+}
+
+.sin-registros{
+    text-align:center;
+    padding:25px;
+    font-size:16px;
+}
+
+footer{
+    margin-top:40px;
+    padding:20px;
+    text-align:center;
+    background:#ffffff;
+    color:#666;
+    font-size:13px;
+}
+
+@media(max-width:768px){
+
+    .busqueda button{
+        width:90%;
+        margin-top:10px;
+        margin-left:0;
+    }
+
+    .grid{
+        grid-template-columns:1fr;
+    }
+
+    .card{
+        padding:15px;
+    }
+
+    .estado-valor{
+        font-size:20px;
+    }
+
+    .seccion h2{
+        font-size:18px;
+    }
+
+    table{
+        display:block;
+        overflow-x:auto;
+        white-space:nowrap;
+    }
+}
