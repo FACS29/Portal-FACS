@@ -6,273 +6,998 @@
 
 body{
     font-family:Arial, Helvetica, sans-serif;
-    background:#f4f6f8;
+    background:#f2f5f8;
     color:#333;
     min-height:100vh;
 }
 
+/*=========================
+ENCABEZADO
+=========================*/
+
 header{
-    background:#ffffff;
-    padding:25px;
+
+    background:white;
+
+    padding:30px;
+
     text-align:center;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+
+    box-shadow:0 4px 15px rgba(0,0,0,.08);
+
 }
 
 .logo{
+
     width:120px;
-    margin-bottom:10px;
+
+    margin-bottom:12px;
+
 }
 
 h1{
+
     color:#006633;
-    font-size:32px;
+
+    font-size:34px;
+
     margin-bottom:8px;
+
 }
 
 h2{
+
     font-size:20px;
+
     font-weight:normal;
-    margin-bottom:8px;
+
+    margin-bottom:6px;
+
 }
 
 h3{
+
+    color:#666;
+
     font-size:18px;
-    color:#444;
-    margin-bottom:12px;
+
 }
 
 .actualizacion{
-    margin-top:10px;
+
+    margin-top:18px;
+
     color:#666;
+
     font-size:14px;
+
 }
+
+/*=========================
+CONTENEDOR
+=========================*/
 
 .contenedor{
+
+    width:95%;
+
     max-width:1200px;
+
     margin:auto;
-    padding:25px;
+
+    padding:30px 0;
+
 }
 
+/*=========================
+BUSCADOR
+=========================*/
+
 .busqueda{
-    background:#ffffff;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+
+    background:white;
+
+    border-radius:18px;
+
+    padding:40px;
+
     text-align:center;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+    margin-bottom:30px;
+
+}
+
+.titulo-bienvenida{
+
+    color:#006633;
+
+    font-size:34px;
+
+    font-weight:bold;
+
     margin-bottom:20px;
+
+}
+
+.mensaje-inicial{
+
+    color:#666;
+
+    margin-bottom:30px;
+
+    line-height:1.7;
+
+    font-size:17px;
+
 }
 
 .busqueda input{
-    width:350px;
-    max-width:90%;
-    padding:12px;
-    border:1px solid #ccc;
-    border-radius:8px;
-    font-size:16px;
+
+    width:420px;
+
+    max-width:95%;
+
+    padding:15px;
+
+    border-radius:12px;
+
+    border:1px solid #CCC;
+
+    font-size:17px;
+
+}
+
+.busqueda input:focus{
+
+    outline:none;
+
+    border:2px solid #006633;
+
 }
 
 .busqueda button{
-    padding:12px 20px;
-    margin-left:10px;
-    border:none;
-    border-radius:8px;
+
+    margin-top:20px;
+
     background:#006633;
+
     color:white;
+
+    border:none;
+
+    border-radius:10px;
+
+    padding:14px 35px;
+
     cursor:pointer;
-    font-size:15px;
+
+    font-size:16px;
+
     font-weight:bold;
+
+    transition:.3s;
+
 }
 
 .busqueda button:hover{
+
     background:#008040;
+
 }
+
+/*=========================
+BIENVENIDA
+=========================*/
+
+.bienvenida-card{
+
+    text-align:center;
+
+    background:linear-gradient(135deg,#006633,#008a47);
+
+    color:white;
+
+}
+
+.nombre-afiliado{
+
+    color:white;
+
+    font-size:34px;
+
+    margin:25px 0;
+
+}
+
+.mensaje-bienvenida{
+
+    font-size:18px;
+
+    margin:10px 0;
+
+    line-height:1.8;
+
+}
+
+/*=========================
+BOTON NUEVA CONSULTA
+=========================*/
+
+.btn-nueva{
+
+    background:#006633;
+
+    color:white;
+
+    border:none;
+
+    border-radius:12px;
+
+    padding:15px 40px;
+
+    cursor:pointer;
+
+    font-size:17px;
+
+    font-weight:bold;
+
+    transition:.3s;
+
+}
+
+.btn-nueva:hover{
+
+    background:#008040;
+
+}
+
+/*=========================
+CARDS
+=========================*/
 
 .card{
+
     background:#ffffff;
-    border-radius:12px;
-    padding:25px;
-    margin-bottom:20px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+
+    border-radius:16px;
+
+    padding:30px;
+
+    margin-bottom:25px;
+
+    box-shadow:0 6px 20px rgba(0,0,0,.08);
+
+    transition:.25s;
+
 }
+
+.card:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:0 10px 28px rgba(0,0,0,.12);
+
+}
+
+@keyframes aparecer{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(15px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+/*=========================
+ESTADO
+=========================*/
 
 .estado{
+
     text-align:center;
+
     padding:20px;
-    border-radius:10px;
+
+    border-radius:15px;
+
     margin-bottom:20px;
-}
 
-.estado-titulo{
-    font-size:15px;
-    font-weight:bold;
-    margin-bottom:10px;
-}
-
-.estado-valor{
-    font-size:24px;
-    font-weight:bold;
 }
 
 .estado-vigente{
-    background:#e8f7ee;
+
+    background:#eaf8ef;
+
     color:#006633;
+
 }
 
 .estado-paz{
-    background:#eaf2ff;
-    color:#0047ab;
+
+    background:#eaf0ff;
+
+    color:#003f99;
+
 }
 
 .estado-anulado{
+
     background:#eeeeee;
-    color:#555;
+
 }
 
+.estado-titulo{
+
+    font-size:15px;
+
+    font-weight:bold;
+
+    margin-bottom:10px;
+
+}
+
+.estado-valor{
+
+    font-size:26px;
+
+    font-weight:bold;
+
+}
+
+/*=========================
+SECCIONES
+=========================*/
+
 .seccion{
-    margin-top:25px;
+
+    margin-top:30px;
+
 }
 
 .seccion h2{
+
     color:#006633;
-    border-bottom:2px solid #006633;
-    padding-bottom:8px;
-    margin-bottom:15px;
-    font-size:20px;
-    font-weight:bold;
+
+    font-size:23px;
+
+    margin-bottom:20px;
+
+    padding-bottom:10px;
+
+    border-bottom:3px solid #006633;
+
 }
 
 .grid{
+
     display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-    gap:15px;
+
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+
+    gap:16px;
+
 }
 
 .item{
-    background:#fafafa;
+
+    background:#ffffff;
+
     border:1px solid #e8e8e8;
-    border-radius:10px;
-    padding:12px;
+
+    border-radius:12px;
+
+    padding:18px;
+
+    transition:.25s;
+
+}
+
+.item:hover{
+
+    border-color:#006633;
+
+    transform:translateY(-2px);
+
+    box-shadow:0 6px 16px rgba(0,102,51,.10);
+
 }
 
 .etiqueta{
+
     font-size:13px;
-    color:#666;
-    font-weight:bold;
-    margin-bottom:6px;
+
+    color:#888;
+
+    font-weight:600;
+
+    margin-bottom:8px;
+
+    text-transform:uppercase;
+
+    letter-spacing:.4px;
+
 }
 
 .valor{
-    font-size:15px;
+
+    font-size:17px;
+
     color:#222;
-    line-height:1.4;
+
+    font-weight:600;
+
+    line-height:1.5;
+
 }
 
 .afiliado-activo{
+
     background:#edf8f1;
-    border-left:5px solid #006633;
+
+    border-left:6px solid #006633;
+
 }
 
 .afiliado-retirado{
-    background:#fff5e6;
-    border-left:5px solid #ff9800;
+
+    background:#fff6e9;
+
+    border-left:6px solid #ff9800;
+
 }
 
 .saldo-destacado{
-    background:#edf8f1;
+
     border:2px solid #006633;
+
+    background:#edf8f1;
+
 }
 
 .saldo-destacado .valor{
+
     font-size:22px;
-    font-weight:bold;
+
     color:#006633;
+
+    font-weight:bold;
+
 }
 
+/*=========================
+BARRA
+=========================*/
+
 .progreso{
+
     width:100%;
-    height:25px;
-    background:#d9d9d9;
-    border-radius:30px;
+
+    height:24px;
+
+    background:#DDD;
+
+    border-radius:40px;
+
     overflow:hidden;
-    margin-top:10px;
+
 }
 
 .barra{
-    height:100%;
+
     background:#006633;
-    width:0%;
+
+    height:100%;
+
+    width:0;
+
 }
 
-.resumen-amortizacion{
-    margin-top:12px;
-    color:#555;
-    font-size:14px;
-}
+/*=========================
+TABLAS
+=========================*/
 
 table{
+
     width:100%;
+
     border-collapse:collapse;
+
     margin-top:15px;
+
 }
 
 th{
+
     background:#006633;
+
     color:white;
-    padding:10px;
-    text-align:center;
+
+    padding:12px;
+
     font-size:14px;
+
 }
 
 td{
-    border:1px solid #ddd;
-    padding:10px;
+
+    padding:11px;
+
+    border:1px solid #DDD;
+
     text-align:center;
-    vertical-align:middle;
-    font-size:14px;
+
 }
 
-.sin-registros{
-    text-align:center;
-    padding:25px;
-    font-size:16px;
-}
+/*=========================
+FOOTER
+=========================*/
 
 footer{
-    margin-top:40px;
-    padding:20px;
+
+    margin-top:50px;
+
+    background:white;
+
     text-align:center;
-    background:#ffffff;
+
+    padding:25px;
+
     color:#666;
+
     font-size:13px;
+
 }
+
+/*=========================
+RESPONSIVE
+=========================*/
 
 @media(max-width:768px){
 
-    .busqueda button{
-        width:90%;
-        margin-top:10px;
-        margin-left:0;
+.busqueda{
+
+padding:25px;
+
+}
+
+.titulo-bienvenida{
+
+font-size:28px;
+
+}
+
+.nombre-afiliado{
+
+font-size:28px;
+
+}
+
+.grid{
+
+grid-template-columns:1fr;
+
+}
+
+table{
+
+display:block;
+
+overflow:auto;
+
+white-space:nowrap;
+
+}
+
+}
+
+/*=========================================
+  BIENVENIDA
+=========================================*/
+
+.bienvenida{
+
+    text-align:center;
+
+    padding:35px 35px;
+
+    animation:aparecer .45s ease;
+
+}
+
+.bienvenida-saludo{
+
+    font-size:22px;
+
+    color:#666;
+
+    margin-bottom:8px;
+
+}
+
+.bienvenida-nombre{
+
+    font-size:34px;
+
+    color:#006633;
+
+    font-weight:bold;
+
+    margin-bottom:18px;
+
+}
+
+.bienvenida-mensaje{
+
+    font-size:18px;
+
+    color:#222;
+
+    margin-bottom:10px;
+
+}
+
+.bienvenida-texto{
+
+    color:#666;
+
+    margin-bottom:0;
+
+}
+
+/*=========================================
+ BOTÓN NUEVA CONSULTA
+=========================================*/
+
+.btn-nueva-consulta{
+
+    background:#006633;
+
+    color:#fff;
+
+    border:none;
+
+    padding:14px 40px;
+
+    border-radius:8px;
+
+    font-size:16px;
+
+    font-weight:bold;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+}
+
+.btn-nueva-consulta:hover{
+
+    background:#008548;
+
+    transform:translateY(-2px);
+
+}
+
+/*=========================================
+ ANIMACIÓN
+=========================================*/
+
+@keyframes aparecer{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(18px);
+
     }
 
-    .grid{
-        grid-template-columns:1fr;
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
     }
 
-    .card{
-        padding:15px;
-    }
+}
 
-    .estado-valor{
-        font-size:20px;
-    }
+/*=========================================
+PORTADA
+=========================================*/
 
-    .seccion h2{
-        font-size:18px;
-    }
+.portada{
 
-    table{
-        display:block;
-        overflow-x:auto;
-        white-space:nowrap;
-    }
+    max-width:800px;
+
+    margin:auto;
+
+}
+
+.portada-titulo{
+
+    color:#006633;
+
+    font-size:32px;
+
+    margin-bottom:18px;
+
+    font-weight:bold;
+
+}
+
+.portada-subtitulo{
+
+    font-size:18px;
+
+    color:#555;
+
+    line-height:1.6;
+
+    margin-bottom:30px;
+
+}
+
+.portada-beneficios{
+
+    background:#f7faf8;
+
+    border-left:5px solid #006633;
+
+    border-radius:12px;
+
+    padding:25px;
+
+    margin-bottom:35px;
+
+    text-align:left;
+
+}
+
+.portada-beneficios div{
+
+    margin:12px 0;
+
+    font-size:17px;
+
+}
+
+.portada-formulario{
+
+    display:flex;
+
+    flex-direction:column;
+
+    align-items:center;
+
+    gap:15px;
+
+}
+
+.portada-formulario input{
+
+    width:420px;
+
+    max-width:95%;
+
+}
+
+.portada-formulario button{
+
+    width:420px;
+
+    max-width:95%;
+
+}
+
+/*==================================================
+SEGUIMIENTO DE CUOTAS
+==================================================*/
+
+.timeline-container{
+
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding:15px 0 10px 0;
+
+}
+
+.timeline{
+
+    display:flex;
+    align-items:center;
+    min-width:max-content;
+
+}
+
+.timeline-inicio,
+.timeline-fin{
+
+    width:70px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:flex-start;
+
+    align-items:center;
+
+    flex-shrink:0;
+
+    font-size:14px;
+
+    font-weight:bold;
+
+    color:#666;
+
+    line-height:1.2;
+
+}
+
+.timeline-linea{
+
+    width:45px;
+    height:4px;
+    flex-shrink:0;
+    transition:.35s;
+
+}
+
+.timeline-linea-gris{
+
+    background:#cfd8dc;
+
+}
+
+.timeline-linea-verde{
+
+    background:#16a34a;
+
+}
+
+.timeline-item{
+
+    width:72px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    flex-shrink:0;
+
+}
+
+.timeline-numero{
+
+    font-size:13px;
+    font-weight:bold;
+    color:#006633;
+    margin-bottom:8px;
+
+}
+
+.timeline-circulo{
+
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    border:3px solid #d0d0d0;
+    background:#d0d0d0;
+
+}
+
+.timeline-texto{
+
+    margin-top:10px;
+    font-size:12px;
+    font-weight:bold;
+    text-align:center;
+    line-height:1.2;
+
+}
+
+.timeline-verde{
+
+    background:#16a34a;
+    border-color:#16a34a;
+
+}
+
+.timeline-amarillo{
+
+    background:#f4b400;
+    border-color:#f4b400;
+
+}
+
+.timeline-gris{
+
+    background:#d9d9d9;
+    border-color:#d9d9d9;
+
+}
+
+.nota-gracia{
+
+    margin-top:18px;
+    padding:14px 18px;
+    border-left:5px solid #006633;
+    background:#edf8f1;
+    border-radius:8px;
+    line-height:1.6;
+    color:#444;
+
+}
+
+/* Scroll */
+
+.timeline-container::-webkit-scrollbar{
+
+    height:8px;
+
+}
+
+.timeline-container::-webkit-scrollbar-thumb{
+
+    background:#bcbcbc;
+    border-radius:20px;
+
+}
+
+.timeline-container::-webkit-scrollbar-track{
+
+    background:#ececec;
+
+}
+
+.timeline-bandera{
+
+    display:block;
+
+    font-size:28px;
+
+    margin-bottom:6px;
+
+}
+
+.timeline-trofeo-gris{
+
+    display:block;
+
+    font-size:28px;
+
+    margin-bottom:6px;
+
+    filter: grayscale(100%);
+    opacity:.75;
+
+}
+
+.timeline-trofeo-dorado{
+
+    display:block;
+
+    font-size:28px;
+
+    margin-bottom:6px;
+
+}
+
+.timeline-inicio-texto,
+.timeline-fin-texto{
+
+    line-height:1.2;
+
 }

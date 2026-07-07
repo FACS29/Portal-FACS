@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>FACS - Consulta de Créditos</title>
+    <title>Portal del Afiliado - FACS</title>
 
     <link rel="stylesheet" href="styles.css">
 
@@ -14,31 +14,61 @@
 
 <body>
 
-    <header>
+<header>
 
-        <img src="logo.png" alt="Logo SINTRAPROACEITES" class="logo">
+    <img src="logo.png" class="logo">
 
-        <h1>SINTRAPROACEITES LA GLORIA</h1>
+    <h1>SINTRAPROACEITES LA GLORIA</h1>
 
-        <h2>Fondo de Ahorro y Crédito Sindical - FACS</h2>
+    <h2>Fondo de Ahorro y Crédito Sindical (FACS)  </h2>
 
-        <h3>Consulta de Créditos</h3>
+    <h3>Portal del Afiliado</h3>
 
-        <div class="actualizacion">
+    <div class="actualizacion">
 
-            Última actualización:
+        Última actualización:
 
-            <span id="ultimaActualizacion">
-                Información no disponible
-            </span>
+        <span id="ultimaActualizacion">
+
+            Información no disponible
+
+        </span>
+
+    </div>
+
+</header>
+
+
+<main class="contenedor">
+
+    <!-- Pantalla Inicial -->
+
+    <section class="busqueda" id="pantallaInicio">
+
+    <div class="portada">
+
+        <h2 class="portada-titulo">
+            Bienvenido al Portal del FACS
+        </h2>
+
+        <p class="portada-subtitulo">
+            Consulte en línea la información actualizada de sus créditos
+            
+        </p>
+
+        <div class="portada-beneficios">
+
+            <div>✔ Consulta segura y confidencial.</div>
+
+            <div>✔ Información financiera actualizada.</div>
+
+            <div>✔ Disponible las 24 horas del día.</div>
+
+            <div>✔ Uso exclusivo para afiliados y deudores.</div>
 
         </div>
 
-    </header>
-
-    <main class="contenedor">
-
-        <section class="busqueda">
+        <div class="portada-formulario">
 
             <input
                 type="text"
@@ -46,33 +76,113 @@
                 placeholder="Ingrese su número de documento">
 
             <button id="btnConsultar">
-                CONSULTAR
+
+                CONSULTAR MI CRÉDITO
+
             </button>
 
-        </section>
+        </div>
 
-        <section id="resultado">
+    </div>
 
-        </section>
+</section>
 
-    </main>
+    <!-- Bienvenida -->
 
-    <footer>
+    <section
+        id="bienvenida"
+        style="display:none;">
 
-        <p>
-            La información presentada corresponde a los registros
-            actualizados del Fondo de Ahorro y Crédito Sindical (FACS)
-            de SINTRAPROACEITES LA GLORIA.
-        </p>
+        <div class="card bienvenida-card">
 
-        <p>
-            Información de carácter informativo para los afiliados.
-        </p>
+            <h2>
 
-    </footer>
+                👋 Bienvenido
 
-    <script src="script.js"></script>
+            </h2>
+
+            <h1
+                id="nombreAfiliado"
+                class="nombre-afiliado">
+
+            </h1>
+
+            <p class="mensaje-bienvenida">
+
+                Su información financiera se encuentra actualizada.
+
+            </p>
+
+            <p class="mensaje-bienvenida">
+
+                Gracias por utilizar el Portal del Fondo de Ahorro y Crédito Sindical (FACS).
+
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- Resultado -->
+
+    <section id="resultado">
+
+    </section>
+
+
+    <!-- Nueva Consulta -->
+
+    <div
+        id="contenedorNuevaConsulta"
+        style="display:none; text-align:center; margin-bottom:35px;">
+
+        <button
+            id="btnNuevaConsulta"
+            class="btn-nueva">
+
+            🔍 NUEVA CONSULTA
+
+        </button>
+
+    </div>
+
+</main>
+
+
+
+<footer>
+
+    <p>
+
+        La información presentada corresponde a los registros
+        oficiales del Fondo de Ahorro y Crédito Sindical (FACS)
+        de SINTRAPROACEITES LA GLORIA.
+
+    </p>
+
+    <p>
+
+        Información de carácter informativo para los afiliados.
+
+    </p>
+
+    <p style="margin-top:15px;font-size:12px;">
+
+        Portal diseñado y desarrollado por
+
+        <strong>
+
+            Jhon Bairo Rojas Beltrán
+
+        </strong>
+
+    </p>
+
+</footer>
+
+<script src="script.js"></script>
 
 </body>
 
-</html> 
+</html>
