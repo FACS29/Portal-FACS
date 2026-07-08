@@ -181,7 +181,7 @@ function mostrarBienvenida(nombre) {
 
             <div class="bienvenida-saludo">
 
-                Bienvenido(a)
+                Bienvenido (a)
 
             </div>
 
@@ -937,7 +937,7 @@ resultado.innerHTML =
     html +
     `
 
-<div style="text-align:center;margin-top:35px;">
+ <div style="text-align:center;margin-top:35px;">
 
     <div class="card" style="text-align:center;">
 
@@ -949,11 +949,27 @@ resultado.innerHTML =
 
     </button>
 
-</div>
+ </div>
 
-`;
+ `;
 
-document
+ const bienvenida = document.querySelector(".bienvenida");
+
+if (bienvenida) {
+
+    const y = bienvenida.getBoundingClientRect().top + window.scrollY - 20;
+
+    window.scrollTo({
+
+        top: y,
+
+        behavior: "smooth"
+
+    });
+
+}
+
+ document
     .getElementById("btnNuevaConsulta")
     .addEventListener("click", mostrarBusqueda);
 
