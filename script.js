@@ -10,6 +10,8 @@
 
 let datosGlobal = [];
 
+let ultimaActualizacionGlobal = null;
+
 let afiliadoActual = null;
 
 let historialActual = [];
@@ -20,46 +22,96 @@ async function cargarDatos() {
 
     try {
 
-        const respuesta = await fetch("datos.json");
+ const [configuracion, creditos] = await Promise.all([
 
-        if (!respuesta.ok) {
+    obtenerConfiguracion(),
 
-            throw new Error("No fue posible cargar datos.json");
+    fetch(
 
-        }
+        `${SUPABASE_URL}/rest/v1/Creditos`,
 
-        const datos = await respuesta.json();
+        {
 
-        if (datos.ultimaActualizacion) {
-
-            document.getElementById("ultimaActualizacion").textContent =
-                datos.ultimaActualizacion;
+            headers: HEADERS
 
         }
 
-        datosGlobal = datos.registros || [];
+    ).then(r => r.json())
 
-    }
+]);
 
-    catch (error) {
+        if (configuracion.length > 0) {
+
+            const fecha = new Date(
+                configuracion[0].Ultima_Actualizacion
+            );
+
+            ultimaActualizacionGlobal = fecha;
+
+            window.fechaActualizacionReal =
+                configuracion[0].Ultima_Actualizacion;
+
+            document.getElementById(
+                "ultimaActualizacion"
+            ).textContent = fecha.toLocaleString(
+                "es-CO"
+            );
+
+        }
+
+        datosGlobal = creditos.map(c => ({
+
+            ...c,
+
+            "Codigo Credito": c.Codigo_Credito,
+
+            "Fecha Inicial": formatearFecha(c.Fecha_Inicial),
+
+            "Fecha Final": formatearFecha(c.Fecha_Final),
+
+            "Valor Desembolsado": c.Valor_Desembolsado,
+
+            "Valor Credito": c.Valor_Credito,
+
+            "Cuotas Pactadas": c.Cuotas_Pactadas,
+
+            "Cuotas Pagadas": c.Cuotas_Pagadas,
+
+            "Porcentaje Amortizado": c.Porcentaje_Amortizado,
+
+            "Capital Pagado": c.Capital_Pagado,
+
+            "Interes Pagado": c.Interes_Pagado,
+
+            "Saldo Capital": c.Saldo_Capital,
+
+            "Porcentaje Interes": c.Porcentaje_Interes,
+
+            "Cuotas Re": c.Cuotas_Re,
+
+            "Ultimo Pago": formatearFecha(c.Ultimo_Pago),
+
+            "Proximo Pago": formatearFecha(c.Proximo_Pago)
+
+        }));
+
+    } catch (error) {
 
         console.error(error);
 
-        document.getElementById("resultado").innerHTML = `
-
-            <div class="card">
-
-                <div class="sin-registros">
-
-                    No fue posible cargar la información del Fondo.
-
-                </div>
-
-            </div>
-
-        `;
+        alert("No fue posible conectar con Supabase.");
 
     }
+
+}
+
+function formatearFecha(fecha) {
+
+    if (!fecha) return "";
+
+    const partes = fecha.split("-");
+
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
 
 }
 
@@ -180,28 +232,25 @@ function mostrarBienvenida(nombre) {
         <div class="card bienvenida">
 
             <div class="bienvenida-saludo">
-
                 Bienvenido (a)
-
             </div>
 
             <div class="bienvenida-nombre">
-
                 ${nombre}
-
             </div>
 
             <div class="bienvenida-mensaje">
-
                 Su información financiera se encuentra actualizada
-
             </div>
 
             <div class="bienvenida-texto">
-
                 Gracias por utilizar el Portal del Fondo de Ahorro y Crédito Sindical
-
             </div>
+
+            <p
+                id="ultimaConsultaUsuario"
+                class="bienvenida-ultima-consulta">
+            </p>
 
         </div>
 
@@ -215,7 +264,13 @@ function limpiarPantalla() {
 
 }
 
-function construirDatosDeudor(vigente, esAfiliado, afiliacionTexto, afiliacionClase) {
+function construirDatosDeudor(
+    vigente,
+    nombreAfiliado,
+    esAfiliado,
+    afiliacionTexto,
+    afiliacionClase
+) {
 
     return `
 
@@ -235,7 +290,7 @@ function construirDatosDeudor(vigente, esAfiliado, afiliacionTexto, afiliacionCl
 
                 <div class="valor">
 
-                    ${vigente.Nombre || ""}
+                    ${nombreAfiliado || ""}
 
                 </div>
 
@@ -444,183 +499,156 @@ function construirFechasCredito(vigente) {
 
 }
 
-function construirSeguimientoCuotas(vigente){
-
-    const total = parseInt(vigente["Cuotas Pactadas"]) || 0;
-
-    const pagadas =
-    parseFloat(
-    String(vigente["Cuotas Pagadas"])
-    .replace(",", ".")
-    ) || 0;
-
-    const gracia = parseFloat(vigente["TGracia"]) || 0;
-
-    let html = `
-
-    <div class="seccion">
-
-        <h2>Seguimiento de Cuotas</h2>
-
-        <div class="timeline-container">
-
-            <div class="timeline">
-
-            <div class="timeline-inicio">
-
-            <span class="timeline-bandera">
-
-             🚩
-
-            </span>
-
-            <div class="timeline-inicio-texto">
-
-             Inicio
-
-            </div>
-
-        </div>
-
-    `;
-
-    for(let i=1;i<=total;i++){
-
-        let color = "timeline-gris";
-let estado = "Pendiente";
-
-// Si el crédito está cancelado completamente
-if (
-    vigente.Estado === "Paz y Salvo" ||
-    Number(pagadas) >= total
-){
-
-    color = "timeline-verde";
-    estado = "Pagada";
-
-}
-else{
-
-    if(i <= Math.floor(pagadas)){
-
-        color = "timeline-verde";
-        estado = "Pagada";
-
-    }
-    else if(
-        pagadas % 1 !== 0 &&
-        i === Math.ceil(pagadas)
-    ){
-
-        color = "timeline-amarillo";
-        estado = "Parcial";
-
-    }
-
-}
-
-        const colorLinea =
-(
-    i <= Math.floor(pagadas)
-)
-? "timeline-linea-verde"
-: "timeline-linea-gris";
-
-html += `
-
-    <div class="timeline-linea ${colorLinea}"></div>
-
-    <div class="timeline-item">
-
-        <div class="timeline-numero">
-
-            ${i}
-
-        </div>
-
-        <div class="timeline-circulo ${color}"></div>
-
-        <div class="timeline-texto">
-
-            ${estado}
-
-        </div>
-
-    </div>
-
-`;
-
-    }
-
- html += `
-
-    <div class="timeline-linea ${
-        (vigente.Estado === "Paz y Salvo" || Number(pagadas) >= total)
-            ? "timeline-linea-verde"
-            : "timeline-linea-gris"
-    }"></div>
-
-    <div class="timeline-fin">
-
-    <span class="${
-        (vigente.Estado === "Paz y Salvo" || Number(pagadas) >= total)
-            ? "timeline-trofeo-dorado"
-            : "timeline-trofeo-gris"
-    }">
-        🏆
-    </span>
-
-    <div class="timeline-fin-texto">
-
-        Fin
-
-    </div>
-
-</div>
-
-</div>
-
-</div>
-
-`;   
-
-    if(gracia>0){
-
-        html+=`
-
-        <div class="nota-gracia">
-
-            <strong>Nota:</strong>
-            Este crédito registra <strong>${vigente.TGracia}</strong> mes(es) de gracia, por lo cual el plazo del crédito fue ampliado durante ese período.
-
-        </div>
-
-        `;
-
-    }
-
-    html+=`
-
-    </div>
-
-    `;
-
-    return html;
-
-}
-
-function consultar() {
-
+async function consultar() {
 
 const documento =
     document.getElementById("documento").value.trim();
 
 if (!documento) return;
 
-const registros =
-    datosGlobal.filter(
-        r => String(r.Documento).trim() === documento
+const ultimaConsulta = await obtenerUltimaConsulta(
+    documento
+);
+
+const respuesta = await fetch(
+
+    `${SUPABASE_URL}/rest/v1/Creditos?Documento=eq.${documento}`,
+
+    {
+
+        headers: HEADERS
+
+    }
+
+);
+
+const registrosBD = await respuesta.json();
+
+let nombreAfiliado = "";
+let fechaRetiroSind = "";
+
+if (registrosBD.length > 0) {
+
+    const documentoAfiliado = registrosBD[0].Documento;
+
+    const respuestaAfiliado = await fetch(
+
+        `${SUPABASE_URL}/rest/v1/Afiliados?Documento=eq.${documentoAfiliado}`,
+
+        {
+
+            headers: HEADERS
+
+        }
+
     );
+    
+    const afiliadoBD = await respuestaAfiliado.json();
+
+    if (afiliadoBD.length > 0) {
+
+        nombreAfiliado = afiliadoBD[0].Nombre;
+
+        fechaRetiroSind = afiliadoBD[0].Fecha_Retiro_Sind
+            ? formatearFecha(afiliadoBD[0].Fecha_Retiro_Sind)
+            : "";
+       
+    }
+
+}
+
+const registros = registrosBD.map(c => ({
+
+    ...c,
+
+    "Estado": c.Estado,
+
+    "Nombre": c.Nombre,
+
+    "Codigo Credito": c.Codigo_Credito,
+
+    "Afiliado": c.Afiliado,
+
+    "Fecha Retiro Sind": fechaRetiroSind,
+
+    "Fecha Inicial": formatearFecha(c.Fecha_Inicial),
+
+    "Fecha Final": formatearFecha(c.Fecha_Final),
+
+    "Valor Desembolsado": c.Valor_Desembolsado,
+
+    "Valor Credito": c.Valor_Credito,
+
+    "Porcentaje Interes": c.Porcentaje_Interes,
+
+    "Cuota Original": c.Cuota_Original,
+
+    "Cuotas Pactadas": c.Cuotas_Pactadas,
+
+    "Cuotas Pagadas": c.Cuotas_Pagadas,
+
+    "Porcentaje Amortizado": c.Porcentaje_Amortizado,
+
+    "Capital Pagado": c.Capital_Pagado,
+
+    "Interes Pagado": c.Interes_Pagado,
+
+    "Saldo Capital": c.Saldo_Capital,
+
+    "Cuotas Re": c.Cuotas_Re,
+
+    "Ultimo Pago": formatearFecha(c.Ultimo_Pago),
+
+    "Proximo Pago": formatearFecha(c.Proximo_Pago)
+
+}));
+
+const registrosOrdenados = [...registros].sort((a, b) => {
+
+    const fechaA = new Date(
+        a.Fecha_Inicial.split("/").reverse().join("-")
+    );
+
+    const fechaB = new Date(
+        b.Fecha_Inicial.split("/").reverse().join("-")
+    );
+
+    return fechaB - fechaA;
+
+});
+
+const vigente =
+
+    registrosOrdenados.find(
+
+        r =>
+
+            String(r.Estado || "")
+                .trim()
+                .toLowerCase()
+                .includes("vigente")
+
+    )
+
+    ||
+
+    registrosOrdenados[0];
+
+const codigoCredito = vigente["Codigo Credito"];
+
+const respuestaPagos = await fetch(
+
+    `${SUPABASE_URL}/rest/v1/Pagos?Codigo_Credito=eq.${codigoCredito}&order=Numero_cuota.asc`,
+
+    {
+
+        headers: HEADERS
+
+    }
+
+);
+
+const pagos = await respuestaPagos.json();
 
 const resultado =
     document.getElementById("resultado");
@@ -644,24 +672,6 @@ if (registros.length === 0) {
     return;
 
 }
-
-const registrosOrdenados = [...registros].sort((a, b) => {
-
-    const fechaA = new Date((a["Fecha Inicial"] || "").split("/").reverse().join("-"));
-    const fechaB = new Date((b["Fecha Inicial"] || "").split("/").reverse().join("-"));
-
-    return fechaB - fechaA;
-
-});
-
-const vigente =
-    registrosOrdenados.find(r =>
-        String(r.Estado || "")
-            .toLowerCase()
-            .includes("vigente")
-    ) || registrosOrdenados[0];
-
-    document.title = "FACS | " + vigente.Nombre;
 
 const estadoInfo =
     obtenerEstadoCredito(vigente.Estado);
@@ -713,6 +723,7 @@ let html = `
 
     ${construirDatosDeudor(
     vigente,
+    nombreAfiliado,
     esAfiliado,
     afiliacionTexto,
     afiliacionClase
@@ -824,8 +835,13 @@ let html = `
 
     </div>
 
-     ${construirSeguimientoCuotas(vigente)}
-`;
+     ${construirTablaAmortizacion(
+     vigente,
+     pagos,
+     window.fechaActualizacionReal
+     )}
+     
+     `;
 
 if (String(vigente.Represteo || "").toLowerCase().includes("si") ||
     String(vigente.Represteo || "").toLowerCase().includes("sí")) {
@@ -933,10 +949,10 @@ html += `
 `;
 
 resultado.innerHTML =
-    mostrarBienvenida(vigente.Nombre) +
+    mostrarBienvenida(nombreAfiliado) +
     html +
     `
-
+   
  <div style="text-align:center;margin-top:35px;">
 
     <div class="card" style="text-align:center;">
@@ -950,8 +966,44 @@ resultado.innerHTML =
     </button>
 
  </div>
+ </div>
 
  `;
+
+const textoUltimaConsulta =
+    document.getElementById(
+        "ultimaConsultaUsuario"
+    );
+
+if (textoUltimaConsulta) {
+
+   textoUltimaConsulta.textContent = ultimaConsulta
+
+    ? `Última consulta: ${new Date(
+          ultimaConsulta
+      ).toLocaleString("es-CO", {
+
+          timeZone: "America/Bogota",
+
+          day: "2-digit",
+          month: "2-digit",
+          year: "2-digit",
+
+          hour: "numeric",
+          minute: "2-digit",
+
+          hour12: true
+
+      })}`
+
+    : "Esta es su primera consulta.";
+
+}
+
+await registrarConsulta(
+    documento,
+    vigente["Codigo Credito"]
+);
 
  const bienvenida = document.querySelector(".bienvenida");
 
@@ -972,7 +1024,6 @@ if (bienvenida) {
  document
     .getElementById("btnNuevaConsulta")
     .addEventListener("click", mostrarBusqueda);
-
 
 }
 
@@ -999,3 +1050,329 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
 });
+
+function mismoMes(fecha1, fecha2) {
+
+    return (
+
+        fecha1.getMonth() === fecha2.getMonth()
+
+        &&
+
+        fecha1.getFullYear() === fecha2.getFullYear()
+
+    );
+
+}
+
+function construirTablaAmortizacion(
+    vigente,
+    pagos,
+    ultimaActualizacion
+ ) {
+
+ const fechaActual = new Date(
+    ultimaActualizacion
+        .replace(" ", "T")
+ );
+
+    fechaActual.setHours(23, 59, 59, 999);
+
+    let html = `
+
+    <div class="seccion">
+
+        <h2>Cronograma de Pagos y Amortización</h2>
+
+        <table>
+
+            <tr>
+
+                <th>Cuota</th>
+
+                <th>Fecha</th>
+
+                <th>Saldo inicial</th>
+
+                <th>Capital</th>
+
+                <th>Interés</th>
+
+                <th>Valor cuota</th>
+
+                <th>Saldo final</th>
+
+                <th>Estado</th>
+
+            </tr>
+
+    `;
+
+    const cuotasPactadas = Number(vigente.Cuotas_Pactadas);
+
+    const cuotasPagadas = Number(vigente.Cuotas_Pagadas || 0);
+
+    const fechaInicio = new Date(vigente.Fecha_Inicial);
+
+    const diaPago = vigente.Empresa === "ELG" ? 25 : 30;
+
+    let cuotasExtra = 0;
+    let totalCapital = 0;
+    let totalInteres = 0;
+    let totalCuota = 0;
+    let numeroCuota = 1;
+
+    let finalizarCronograma = false;
+
+     const creditoAnulado =
+
+        String(vigente.Estado || "")
+            .toLowerCase()
+            .includes("anulado");
+
+    let detenerDespuesDeEstaFila = false;
+
+    while (
+
+    numeroCuota <= cuotasPactadas + cuotasExtra
+
+    &&
+
+    !(creditoAnulado && numeroCuota > pagos.length)
+
+    &&
+
+    !finalizarCronograma
+
+        ) {
+
+     detenerDespuesDeEstaFila = false;
+
+    const fechaCuota = new Date(fechaInicio);
+
+    fechaCuota.setMonth(
+        fechaInicio.getMonth() + (numeroCuota - 1)
+    );
+
+    fechaCuota.setDate(diaPago);
+
+    const pago = pagos.find(p => {
+
+        const fechaPago = new Date(p.Fecha);
+
+    return mismoMes(fechaPago, fechaCuota);
+
+});
+
+    let estado = "";
+
+if (pago) {
+
+    totalCapital += Number(pago.Capital_Pagado || 0);
+
+    totalInteres += Number(pago.Interes_Pagado || 0);
+
+    totalCuota += Number(pago.Valor_Cuota || 0);
+
+    const valorPagado = Number(pago.Valor_Cuota || 0);
+
+let cuotaEsperada = Number(vigente.Cuota || 0);
+
+if (
+
+    vigente.Afiliado === "No"
+
+    &&
+
+    Number(vigente["Cuota Original"] || 0) > 0
+
+) {
+
+    const cuotaOriginal = Number(
+
+        vigente["Cuota Original"]
+
+    );
+
+    const cuotaActual = Number(
+
+        vigente.Cuota
+
+    );
+
+    const diferenciaOriginal = Math.abs(
+
+        valorPagado - cuotaOriginal
+
+    );
+
+    const diferenciaActual = Math.abs(
+
+        valorPagado - cuotaActual
+
+    );
+
+    cuotaEsperada =
+
+        diferenciaOriginal <= diferenciaActual
+
+            ? cuotaOriginal
+
+            : cuotaActual;
+
+}
+    
+    if (valorPagado < cuotaEsperada) {
+
+    estado = "🟡 Pago Parcial";
+
+    cuotasExtra++;
+
+    } else {
+
+    estado = "🟢 Pagada";
+
+    }
+
+
+    if (
+
+    pago.Saldo_Final !== null
+
+    &&
+
+    pago.Saldo_Final !== ""
+
+    &&
+
+    Number(pago.Saldo_Final) === 0
+
+) {
+
+    estado = "✅ Crédito Cancelado";
+
+    detenerDespuesDeEstaFila = true;
+
+}
+
+} else {
+
+const yaPaso =
+
+    fechaCuota.getTime() <= fechaActual.getTime();
+    
+
+    if (
+
+    yaPaso
+
+    &&
+
+    numeroCuota <= cuotasPagadas + cuotasExtra + 1
+
+) {
+
+    estado = "🔵 Tiempo de Gracia";
+
+    cuotasExtra++;
+    
+} else {
+
+    estado = "⚪ Pendiente";
+
+}
+    
+}
+
+    html += `
+
+        <tr>
+
+            <td>${numeroCuota}</td>
+
+            <td>${`${String(fechaCuota.getDate()).padStart(2, "0")}/${
+                  String(fechaCuota.getMonth() + 1).padStart(2, "0")
+            }/${
+                fechaCuota.getFullYear()
+            }`}</td>
+
+            <td>${pago ? formatoMoneda(pago.Saldo_Inicial) : "-"}</td>
+
+            <td>${pago ? formatoMoneda(pago.Capital_Pagado) : "-"}</td>
+
+            <td>${pago ? formatoMoneda(pago.Interes_Pagado) : "-"}</td>
+
+            <td>${pago ? formatoMoneda(pago.Valor_Cuota) : "-"}</td>
+
+            <td>${pago ? formatoMoneda(pago.Saldo_Final) : "-"}</td>
+
+            <td>${estado}</td>
+
+        </tr>
+
+    `;
+
+    if (detenerDespuesDeEstaFila) {
+
+    finalizarCronograma = true;
+
+    }
+
+    numeroCuota++;
+
+}
+
+html += `
+
+    <tr style="font-weight:bold;background:#f5f5f5;">
+
+            <td colspan="3">Totales</td>
+
+        <td>${formatoMoneda(totalCapital)}</td>
+
+        <td>${formatoMoneda(totalInteres)}</td>
+
+        <td>${formatoMoneda(totalCuota)}</td>
+        
+        <td></td>
+ <td colspan="3">
+
+            ${creditoAnulado ? "❌ Crédito Anulado" : "Totales"}
+
+        </td>
+
+            </tr>
+
+`;
+
+html += `
+
+        </table>
+
+`;
+
+ if (cuotasExtra > 0) {
+
+    html += `
+
+    <div class="nota-gracia">
+
+        <strong>Nota:</strong>
+
+        Este crédito registra <strong>${vigente.TGracia}</strong> mes(es) de gracia y/o pagos parciales, situación que generó una ampliación del plazo inicialmente pactado.
+
+    </div>
+
+    `;
+
+}
+
+html += `
+
+    </div>
+
+`;
+
+return html;
+
+}
