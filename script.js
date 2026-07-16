@@ -210,9 +210,9 @@ function mostrarBusqueda() {
 
     document.title = "FACS | Consulta de Créditos";
 
-    document.getElementById("pantallaInicio").style.display = "block";
-
     document.getElementById("resultado").innerHTML = "";
+
+    document.getElementById("pantallaInicio").style.display = "block";
 
     document.getElementById("documento").value = "";
 
@@ -524,6 +524,9 @@ const respuesta = await fetch(
 
 const registrosBD = await respuesta.json();
 
+console.log(registrosBD);
+console.log(registrosBD.length);
+
 let nombreAfiliado = "";
 let fechaRetiroSind = "";
 
@@ -603,6 +606,34 @@ const registros = registrosBD.map(c => ({
 
 }));
 
+const resultado =
+    document.getElementById("resultado");
+
+if (registros.length === 0) {
+
+    resultado.innerHTML = `
+
+        <div class="card">
+
+            <div class="sin-registros">
+
+                No se encontraron créditos asociados al documento consultado.
+
+            </div>
+
+        </div>
+
+    `;
+
+    document.getElementById("resultado").scrollIntoView({
+
+        behavior: "smooth"
+
+    });
+
+    return;
+}
+
 const registrosOrdenados = [...registros].sort((a, b) => {
 
     const fechaA = new Date(
@@ -650,28 +681,7 @@ const respuestaPagos = await fetch(
 
 const pagos = await respuestaPagos.json();
 
-const resultado =
-    document.getElementById("resultado");
-
 document.getElementById("pantallaInicio").style.display = "none";
-
-if (registros.length === 0) {
-
-    document.getElementById("pantallaInicio").style.display = "block";
-
-    resultado.innerHTML = `
-        <div class="card">
-            <div class="sin-registros">
-                No se encontraron créditos asociados al documento consultado.
-            </div>
-        </div>
-    `;
-
-    document.getElementById("documento").focus();
-
-    return;
-
-}
 
 const estadoInfo =
     obtenerEstadoCredito(vigente.Estado);
