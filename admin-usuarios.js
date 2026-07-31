@@ -8,7 +8,10 @@
   mecanismo publico de "olvide mi contraseña").
 */
 
-const URL_SERVIDOR_LOCAL = "http://localhost:4001";
+const URL_SERVIDOR_LOCAL =
+     window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+       ? "http://localhost:4001"
+       : "https://portal-facs.onrender.com";
 
 const NOMBRES_ROLES = {
     superadministrador: "Superadministrador",
