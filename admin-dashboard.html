@@ -13,6 +13,7 @@
 <body>
 
 <header class="topbar">
+    <button id="btnMenu" class="btn-menu" aria-label="Abrir menú">&#9776;</button>
     <img src="logo.png" alt="Logo FACS" class="logo-mini">
     <h1>Panel Administrativo — FACS</h1>
     <div class="usuario-actual">
@@ -30,6 +31,7 @@
     <a href="admin-comunicados.html">Comunicados</a>
     <a href="admin-consultas.html">Consultas del portal</a>
 </nav>
+<div id="fondoMenu" class="fondo-menu"></div>
 
 <main class="contenido contenido-dash">
     <p id="cargando" class="nota">Cargando indicadores...</p>
@@ -222,6 +224,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="supabase.js"></script>
 <script src="admin-guard.js"></script>
+<script src="admin-menu.js"></script>
 <script src="admin-dashboard.js"></script>
 </body>
 </html>

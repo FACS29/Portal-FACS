@@ -15,6 +15,7 @@
 <body>
 
 <header class="topbar">
+    <button id="btnMenu" class="btn-menu" aria-label="Abrir menú">&#9776;</button>
     <img src="logo.png" alt="Logo FACS" class="logo-mini">
     <h1>Panel Administrativo — FACS</h1>
     <div class="usuario-actual">
@@ -32,6 +33,7 @@
     <a href="admin-comunicados.html" class="activo">Comunicados</a>
     <a href="admin-consultas.html">Consultas del portal</a>
 </nav>
+<div id="fondoMenu" class="fondo-menu"></div>
 
 <main class="contenido">
     <div class="encabezado-seccion">
@@ -87,6 +89,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supabase.js"></script>
 <script src="admin-guard.js"></script>
+<script src="admin-menu.js"></script>
 <script src="admin-comunicados.js"></script>
 </body>
 </html>
