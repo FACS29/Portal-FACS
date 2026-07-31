@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Administrativo — FACS</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="admin-login.css">
+</head>
+<body>
+
+  <div class="login-card">
+    <img src="logo.png" alt="Logo FACS" class="logo">
+    <h1>Panel Administrativo</h1>
+    <p class="subtitulo">Fondo de Ahorro y Crédito Sindical</p>
+
+    <form id="formLogin" autocomplete="off">
+      <label for="documento">Número de documento</label>
+      <input type="text" id="documento" name="documento" required autocomplete="username" inputmode="numeric">
+
+      <label for="clave">Contraseña</label>
+      <input type="password" id="clave" name="clave" required autocomplete="current-password">
+
+      <button type="submit" id="btnEntrar">Entrar</button>
+    </form>
+
+    <button type="button" id="btnRecuperar" class="link-recuperar">
+      ¿Olvidaste tu contraseña?
+    </button>
+
+    <div id="mensaje" class="mensaje" role="status" aria-live="polite"></div>
+
+    <a href="index.html" class="volver">← Volver al Portal del Afiliados</a>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="supabase.js"></script>
+<script src="admin-login.js"></script>
+</body>
+</html>

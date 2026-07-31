@@ -115,6 +115,22 @@ function formatearFecha(fecha) {
 
 }
 
+// Para timestamps completos (con hora), como fecha_publicacion de
+// Comunicados -- formatearFecha() se rompe con estos porque fue
+// pensada solo para fechas simples "YYYY-MM-DD".
+function formatearFechaHora(fechaISO) {
+
+    if (!fechaISO) return "";
+
+    const fecha = new Date(fechaISO);
+
+    return fecha.toLocaleString("es-CO", {
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit"
+    });
+
+}
+
 function formatoMoneda(valor) {
 
     const numero = Number(valor || 0);
@@ -218,6 +234,17 @@ function mostrarBusqueda() {
 
     document.getElementById("documento").focus();
 
+    // Los comunicados dirigidos a una persona en particular no deben
+    // seguir viéndose una vez que esa persona sale de su consulta --
+    // solo los generales (para todos) se quedan.
+    document
+        .querySelectorAll(".tarjeta-comunicado-personal")
+        .forEach((el) => el.remove());
+
+    if (!document.getElementById("listaComunicados").children.length) {
+        document.getElementById("seccionComunicados").style.display = "none";
+    }
+
     window.scrollTo({
         top: 0,
         behavior: "smooth"
@@ -225,7 +252,7 @@ function mostrarBusqueda() {
 
 }
 
-function mostrarBienvenida(nombre) {
+function mostrarBienvenida(nombre, documento) {
 
     return `
 
@@ -560,6 +587,17 @@ if (registrosBD.length > 0) {
 
 }
 
+// Activar el enlace del buzon en el pie de pagina, ahora que ya
+// sabemos documento y nombre (antes de consultar, permanece oculto).
+const enlaceBuzon = document.getElementById("enlaceBuzon");
+if (enlaceBuzon && documento) {
+    enlaceBuzon.href =
+        `buzon-sugerencias.html?documento=${encodeURIComponent(documento)}&nombre=${encodeURIComponent(nombreAfiliado || "")}`;
+    enlaceBuzon.style.display = "inline-block";
+}
+
+if (documento) cargarComunicadosPersonales(documento);
+
 const registros = registrosBD.map(c => ({
 
     ...c,
@@ -829,7 +867,7 @@ let html = `
                     </div>
                 </div>
 
-                <div style="
+                <div class="valor" style="
                     min-width:60px;
                     text-align:right;
                     font-weight:bold;
@@ -838,6 +876,13 @@ let html = `
                 ">
                     ${porcentaje === 100 ? "100%" : porcentaje.toFixed(2) + "%"}
                 </div>
+
+            </div>
+
+            <div class="desglose-progreso">
+                <span><i class="punto punto-capital"></i> Capital pagado: ${formatoMoneda(vigente["Capital Pagado"])}</span>
+                <span><i class="punto punto-interes"></i> Interés pagado: ${formatoMoneda(vigente["Interes Pagado"])}</span>
+            </div>
 
             </div>
 
@@ -896,6 +941,7 @@ html += `
 
     <h2>Historial de Créditos del Afiliado</h2>
 
+    <div class="tabla-scroll">
     <table>
 
         <tr>
@@ -955,11 +1001,12 @@ registros.forEach(r => {
 
 html += `
     </table>
+    </div>
 </div>
 `;
 
 resultado.innerHTML =
-    mostrarBienvenida(nombreAfiliado) +
+    mostrarBienvenida(nombreAfiliado, documento) +
     html +
     `
    
@@ -1043,6 +1090,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     mostrarBusqueda();
 
+    cargarComunicados();
+
     document
         .getElementById("btnConsultar")
         .addEventListener("click", consultar);
@@ -1094,6 +1143,7 @@ function construirTablaAmortizacion(
 
         <h2>Cronograma de Pagos y Amortización</h2>
 
+        <div class="tabla-scroll">
         <table>
 
             <tr>
@@ -1358,6 +1408,7 @@ html += `
 html += `
 
         </table>
+        </div>
 
 `;
 
@@ -1384,5 +1435,98 @@ html += `
 `;
 
 return html;
+
+}
+/*
+  Comunicados dirigidos a UN documento en particular. Se piden aparte
+  de los generales, y solo después de una consulta exitosa (antes no
+  se sabe el documento). Nota de seguridad: al igual que el resto del
+  portal, esto se filtra por parámetro en la consulta, no por sesión
+  -- es el mismo modelo de confianza que ya tiene la consulta de
+  créditos por documento (ver diagnóstico original).
+*/
+async function cargarComunicadosPersonales(documentoConsultado) {
+
+    try {
+
+        const respuesta = await fetch(
+            `${SUPABASE_URL}/rest/v1/Comunicados?activo=eq.true&documento_destino=eq.${encodeURIComponent(documentoConsultado)}&order=fecha_publicacion.desc`,
+            { headers: HEADERS }
+        );
+
+        if (!respuesta.ok) return;
+
+        const personales = await respuesta.json();
+
+        if (!personales.length) return;
+
+        const contenedor = document.getElementById("listaComunicados");
+
+        const bloquePersonal = personales.map(c => `
+            <div class="tarjeta-comunicado tarjeta-comunicado-personal">
+                <div class="comunicado-titulo">Para ti: ${c.titulo}</div>
+                <div class="comunicado-texto">${c.mensaje}</div>
+                <div class="comunicado-fecha">${formatearFechaHora(c.fecha_publicacion)}</div>
+            </div>
+        `).join("");
+
+        contenedor.innerHTML = bloquePersonal + contenedor.innerHTML;
+        document.getElementById("seccionComunicados").style.display = "block";
+
+        // Registra la vista de cada comunicado personal que se acaba
+        // de mostrar -- a la segunda vez, se desactiva solo (ver
+        // registrar_vista_comunicado en Supabase). No importa cuánto
+        // tiempo pase entre una consulta y otra.
+        personales.forEach((c) => {
+            fetch(`${SUPABASE_URL}/rest/v1/rpc/registrar_vista_comunicado`, {
+                method: "POST",
+                headers: HEADERS,
+                body: JSON.stringify({ p_id: c.id })
+            }).catch(() => {}); // si falla, no debe romper el portal
+        });
+
+    } catch (error) {
+        console.error("No se pudieron cargar los comunicados personales:", error);
+    }
+
+}
+
+/*
+  Comunicados del Fondo -- visibles para cualquiera que abra el
+  portal, sin necesidad de consultar su crédito. Usa la misma clave
+  publicable (RLS ya limita a solo los comunicados activos).
+*/
+async function cargarComunicados() {
+
+    try {
+
+        const respuesta = await fetch(
+            `${SUPABASE_URL}/rest/v1/Comunicados?activo=eq.true&documento_destino=is.null&order=fecha_publicacion.desc&limit=5`,
+            { headers: HEADERS }
+        );
+
+        if (!respuesta.ok) return;
+
+        const comunicados = await respuesta.json();
+
+        if (!comunicados.length) return;
+
+        const contenedor = document.getElementById("listaComunicados");
+
+        contenedor.innerHTML = comunicados.map(c => `
+            <div class="tarjeta-comunicado">
+                <div class="comunicado-titulo">${c.titulo}</div>
+                <div class="comunicado-texto">${c.mensaje}</div>
+                <div class="comunicado-fecha">${formatearFechaHora(c.fecha_publicacion)}</div>
+            </div>
+        `).join("");
+
+        document.getElementById("seccionComunicados").style.display = "block";
+
+    } catch (error) {
+        // Si falla, simplemente no se muestran comunicados -- no debe
+        // romper el resto del portal.
+        console.error("No se pudieron cargar los comunicados:", error);
+    }
 
 }

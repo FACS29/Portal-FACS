@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Financiero — FACS</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin-panel.css">
+<link rel="stylesheet" href="admin-dashboard.css">
+</head>
+<body>
+
+<header class="topbar">
+    <img src="logo.png" alt="Logo FACS" class="logo-mini">
+    <h1>Panel Administrativo — FACS</h1>
+    <div class="usuario-actual">
+        <span id="nombreUsuario"></span>
+        <button id="btnSalir">Salir</button>
+    </div>
+</header>
+
+<nav class="menu-lateral">
+    <a href="admin-panel.html" id="navAdministradores" style="display:none">Administradores</a>
+    <a href="admin-dashboard.html" class="activo">Dashboard financiero</a>
+    <a href="admin-movimientos.html">Movimientos</a>
+    <a href="admin-creditos.html">Créditos</a>
+    <a href="admin-mensajes.html">Mensajes <span id="contadorNoLeidos" class="badge"></span></a>
+    <a href="admin-comunicados.html">Comunicados</a>
+    <a href="admin-consultas.html">Consultas del portal</a>
+</nav>
+
+<main class="contenido contenido-dash">
+    <p id="cargando" class="nota">Cargando indicadores...</p>
+    <p id="avisoAnulados" class="nota-aviso" style="display:none"></p>
+
+    <div id="cuerpoDashboard" style="display:none">
+
+        <!-- Selector de periodo -->
+        <div class="barra-periodo">
+            <label for="selectorPeriodo">Periodo (afecta capital aportado, desembolsado,
+                recuperado, intereses, pagados y anulados):</label>
+            <select id="selectorPeriodo">
+                <option value="todo">Todo el tiempo</option>
+                <option value="anio">Este año</option>
+                <option value="mes">Este mes</option>
+            </select>
+            <span class="nota-periodo">
+                * Dinero prestado, créditos vigentes y capital disponible siempre son
+                a hoy, sin importar el periodo elegido.
+            </span>
+        </div>
+
+        <!-- Franja hero -->
+        <section class="hero-financiero">
+            <div class="hero-texto">
+                <span class="hero-eyebrow">Capital disponible hoy</span>
+                <span class="hero-cifra" id="heroCifra">$0</span>
+                <span class="hero-delta" id="heroDelta"></span>
+                <div class="hero-desglose" id="heroDesglose"></div>
+            </div>
+            <div class="hero-sparkline">
+                <div class="contenedor-grafica contenedor-sparkline">
+                    <canvas id="graficaSparkline"></canvas>
+                </div>
+                <span class="hero-sparkline-etiqueta">Evolución del capital semilla</span>
+            </div>
+        </section>
+
+        <!-- Fila de indicadores, cada uno con desglose por empresa -->
+        <section class="fila-kpi">
+            <div class="kpi">
+                <span class="kpi-etiqueta">Capital aportado (semilla)</span>
+                <span class="kpi-valor" id="kpiCapitalTotal">—</span>
+                <div class="kpi-desglose" id="desgloseCapitalTotal"></div>
+            </div>
+            <div class="kpi">
+                <span class="kpi-etiqueta">Total desembolsado</span>
+                <span class="kpi-valor" id="kpiDesembolsado">—</span>
+                <div class="kpi-desglose" id="desgloseDesembolsado"></div>
+            </div>
+            <div class="kpi">
+                <span class="kpi-etiqueta">Capital recuperado</span>
+                <span class="kpi-valor" id="kpiRecuperado">—</span>
+                <div class="kpi-desglose" id="desgloseRecuperado"></div>
+            </div>
+            <div class="kpi">
+                <span class="kpi-etiqueta">Intereses generados</span>
+                <span class="kpi-valor" id="kpiIntereses">—</span>
+                <div class="kpi-desglose" id="desgloseIntereses"></div>
+            </div>
+            <div class="kpi">
+                <span class="kpi-etiqueta">Valor promedio del préstamo</span>
+                <span class="kpi-valor" id="kpiValorPromedio">—</span>
+                <div class="kpi-desglose" id="desgloseValorPromedio"></div>
+            </div>
+
+            <div class="kpi kpi-hoy">
+                <span class="kpi-etiqueta">Dinero prestado (a hoy)</span>
+                <span class="kpi-valor" id="kpiPrestado">—</span>
+                <div class="kpi-desglose" id="desglosePrestado"></div>
+            </div>
+            <div class="kpi kpi-hoy">
+                <span class="kpi-etiqueta">Créditos vigentes (a hoy)</span>
+                <span class="kpi-valor" id="kpiCreditosVigentes">—</span>
+                <div class="kpi-desglose" id="desgloseCreditosVigentes"></div>
+            </div>
+            <div class="kpi">
+                <span class="kpi-etiqueta">Créditos pagados (Paz y Salvo)</span>
+                <span class="kpi-valor" id="kpiPagados">—</span>
+                <div class="kpi-desglose" id="desglosePagados"></div>
+            </div>
+            <div class="kpi">
+                <span class="kpi-etiqueta">Créditos anulados (cantidad)</span>
+                <span class="kpi-valor" id="kpiAnuladosCantidad">—</span>
+                <div class="kpi-desglose" id="desgloseAnuladosCantidad"></div>
+            </div>
+        </section>
+
+        <!-- Salud de cartera -->
+        <section class="tarjeta-panel">
+            <h2 class="titulo-tarjeta">Salud de la cartera</h2>
+            <p class="texto-plano" id="textoSaludCartera">—</p>
+            <div class="barra-salud">
+                <div class="barra-salud-relleno" id="barraSaludRelleno"></div>
+            </div>
+            <div class="barra-salud-leyenda">
+                <span><i class="punto punto-verde"></i> Recuperado</span>
+                <span><i class="punto punto-claro"></i> Cartera vigente</span>
+            </div>
+        </section>
+
+        <!-- Grid de graficas -->
+        <section class="grid-2">
+            <div class="tarjeta-panel">
+                <h2 class="titulo-tarjeta">Composición del capital por empresa</h2>
+                <p class="texto-plano" id="textoComposicion">—</p>
+                <div class="contenedor-grafica contenedor-mediano">
+                    <canvas id="graficaDonutEmpresa"></canvas>
+                </div>
+            </div>
+            <div class="tarjeta-panel">
+                <h2 class="titulo-tarjeta">Créditos por estado</h2>
+                <p class="texto-plano" id="textoEstados">—</p>
+                <div class="contenedor-grafica contenedor-mediano">
+                    <canvas id="graficaDonutEstados"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="tarjeta-panel">
+            <h2 class="titulo-tarjeta">Evolución acumulada del capital</h2>
+            <p class="texto-plano">Cómo ha crecido el capital semilla del Fondo con cada aporte, empresa por empresa a lo largo del tiempo.</p>
+            <div class="contenedor-grafica contenedor-evolucion">
+                <canvas id="graficaEvolucion"></canvas>
+            </div>
+        </section>
+
+        <section class="tarjeta-panel">
+            <h2 class="titulo-tarjeta">Créditos por empresa: desembolsado vs. recuperado</h2>
+            <p class="texto-plano">Comparación directa entre lo que se ha prestado y lo que ya ha vuelto al Fondo, por cada unidad operativa.</p>
+            <div class="contenedor-grafica contenedor-grande">
+                <canvas id="graficaCreditosPorEmpresa"></canvas>
+            </div>
+        </section>
+
+        <!-- ===== Indicadores adicionales ===== -->
+        <div class="encabezado-seccion" style="margin-top:8px">
+            <h2 style="font-family:'Fraunces',serif;color:#0B1F17;font-size:20px">Indicadores adicionales</h2>
+        </div>
+
+        <section class="fila-kpi">
+            <div class="kpi">
+                <span class="kpi-etiqueta">Rentabilidad (intereses / capital semilla)</span>
+                <span class="kpi-valor" id="kpiRentabilidad">—</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi-etiqueta">Rotación de cartera (histórica)</span>
+                <span class="kpi-valor" id="kpiRotacion">—</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi-etiqueta">Afiliados activos</span>
+                <span class="kpi-valor" id="kpiAfiliadosActivos">—</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi-etiqueta">Afiliados retirados</span>
+                <span class="kpi-valor" id="kpiAfiliadosRetirados">—</span>
+            </div>
+        </section>
+
+        <section class="grid-2">
+            <div class="tarjeta-panel">
+                <h2 class="titulo-tarjeta">Aportes de capital: este año vs. el anterior</h2>
+                <p class="texto-plano" id="textoComparativoAnios">—</p>
+                <div class="contenedor-grafica contenedor-mediano">
+                    <canvas id="graficaComparativoAnios"></canvas>
+                </div>
+            </div>
+            <div class="tarjeta-panel">
+                <h2 class="titulo-tarjeta">Créditos nuevos por mes</h2>
+                <p class="texto-plano">Según la fecha real de creación del crédito.</p>
+                <div class="contenedor-grafica contenedor-mediano">
+                    <canvas id="graficaCreditosPorMes"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section class="tarjeta-panel">
+            <h2 class="titulo-tarjeta">Top 5 represtamos</h2>
+            <p class="texto-plano">Afiliados con más créditos otorgados históricamente (aproximación: cuenta todos los créditos por documento, incluye el original).</p>
+            <table class="tabla-movimientos tabla-represtamos" id="tablaRepresteos">
+                <thead><tr><th>Afiliado</th><th>Documento</th><th class="col-cantidad"># Créditos</th></tr></thead>
+                <tbody id="tablaRepresteosBody"><tr><td colspan="3">—</td></tr></tbody>
+            </table>
+        </section>
+
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="supabase.js"></script>
+<script src="admin-guard.js"></script>
+<script src="admin-dashboard.js"></script>
+</body>
+</html>

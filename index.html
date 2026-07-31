@@ -8,11 +8,16 @@
 
     <title>Portal del Afiliado - FACS</title>
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="styles.css">
 
 </head>
 
 <body>
+
+<button id="btnModoOscuro" class="btn-modo-oscuro" title="Cambiar a modo oscuro">🌙</button>
 
 <header>
 
@@ -40,6 +45,11 @@
 
 
 <main class="contenedor">
+
+    <!-- Comunicados del Fondo -->
+    <section id="seccionComunicados" style="display:none">
+        <div id="listaComunicados"></div>
+    </section>
 
     <!-- Pantalla Inicial -->
 
@@ -142,8 +152,19 @@
 
     </p>
 
+    <a
+        href="buzon-sugerencias.html"
+        id="enlaceBuzon"
+        class="enlace-buzon"
+        style="display:none">
+        ¿Tienes algo que decirnos? Déjanos un mensaje
+    </a>
+
+    <a href="admin-login.html" class="enlace-admin">Portal Administrativo</a>
+
 </footer>
 
+<script src="modo-oscuro.js"></script>
 <script src="supabase.js"></script>
 <script src="script.js"></script>
 

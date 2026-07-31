@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consultas del portal — FACS</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin-panel.css">
+<link rel="stylesheet" href="admin-movimientos.css">
+<link rel="stylesheet" href="admin-creditos.css">
+<style>
+.tabla-consultas .col-afiliado{ min-width:220px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+    <img src="logo.png" alt="Logo FACS" class="logo-mini">
+    <h1>Panel Administrativo — FACS</h1>
+    <div class="usuario-actual">
+        <span id="nombreUsuario"></span>
+        <button id="btnSalir">Salir</button>
+    </div>
+</header>
+
+<nav class="menu-lateral">
+    <a href="admin-panel.html" id="navAdministradores" style="display:none">Administradores</a>
+    <a href="admin-dashboard.html">Dashboard financiero</a>
+    <a href="admin-movimientos.html">Movimientos</a>
+    <a href="admin-creditos.html">Créditos</a>
+    <a href="admin-mensajes.html">Mensajes <span id="contadorNoLeidos" class="badge"></span></a>
+    <a href="admin-comunicados.html">Comunicados</a>
+    <a href="admin-consultas.html" class="activo">Consultas del portal</a>
+</nav>
+
+<main class="contenido">
+    <div class="encabezado-seccion"><h2>Consultas del portal</h2></div>
+
+    <p class="texto-plano">
+        Registro de cada vez que un afiliado consultó su crédito en el portal público
+        (documento, fecha y hora, navegador y dispositivo). Es información de solo
+        lectura -- no se edita ni se borra desde aquí.
+    </p>
+
+    <div class="barra-filtros">
+        <div class="campo-filtro campo-ancho">
+            <label>Buscar (nombre o documento)</label>
+            <input type="text" id="buscarTexto" placeholder="Ej: Rojas, o 123456789">
+        </div>
+        <div class="campo-filtro">
+            <label>Desde</label>
+            <input type="date" id="filtroDesde">
+        </div>
+        <div class="campo-filtro">
+            <label>Hasta</label>
+            <input type="date" id="filtroHasta">
+        </div>
+        <button id="btnLimpiarFiltros" class="btn-secundario">Limpiar filtros</button>
+    </div>
+
+    <p class="resumen-filtros" id="resumenFiltros"></p>
+
+    <table class="tabla-movimientos tabla-consultas">
+        <thead>
+            <tr>
+                <th>Fecha y hora</th><th class="col-afiliado">Afiliado</th><th>Documento</th>
+                <th>Crédito consultado</th>
+            </tr>
+        </thead>
+        <tbody id="tablaConsultasBody"><tr><td colspan="4">Cargando...</td></tr></tbody>
+    </table>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="supabase.js"></script>
+<script src="admin-guard.js"></script>
+<script src="admin-consultas.js"></script>
+</body>
+</html>

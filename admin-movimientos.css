@@ -1,0 +1,93 @@
+.encabezado-seccion h2{
+    font-family:"IBM Plex Sans", sans-serif;
+    color:#006633;
+    margin-bottom:18px;
+}
+
+.barra-filtros{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    align-items:flex-end;
+    background:#fff;
+    border:1px solid #E4EBE6;
+    border-radius:14px;
+    padding:16px 18px;
+    margin-bottom:14px;
+}
+
+.campo-filtro{ display:flex; flex-direction:column; gap:4px; }
+.campo-filtro label{
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:12px; color:#5B6B62;
+}
+.campo-filtro select, .campo-filtro input{
+    padding:7px 10px;
+    border:1px solid #dcdcdc;
+    border-radius:8px;
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:13px;
+}
+
+.btn-secundario{
+    background:none;
+    border:1px solid #ccc;
+    border-radius:10px;
+    padding:8px 16px;
+    font-size:13px;
+    cursor:pointer;
+    height:36px;
+}
+.btn-secundario:hover{ border-color:#006633; color:#006633; }
+
+.resumen-filtros{
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:13px;
+    color:#5B6B62;
+    margin-bottom:14px;
+}
+
+.tabla-movimientos{
+    width:100%;
+    border-collapse:collapse;
+    background:#fff;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 6px 20px rgba(0,0,0,.06);
+}
+
+.tabla-movimientos th{
+    background:#006633; color:#fff; text-align:left;
+    padding:12px 14px; font-size:12.5px;
+    font-family:"IBM Plex Sans", sans-serif;
+}
+
+.tabla-movimientos td{
+    padding:10px 14px;
+    border-top:1px solid #f0f0f0;
+    font-size:13.5px;
+    font-family:"IBM Plex Sans", sans-serif;
+}
+
+.tabla-movimientos td.valor{
+    font-family:"IBM Plex Mono", monospace;
+    font-variant-numeric:tabular-nums;
+    text-align:right;
+}
+
+.tabla-movimientos tr.fila-clicable{ cursor:pointer; }
+.tabla-movimientos tr.fila-clicable:hover{ background:#f7f9f7; }
+
+.etiqueta-tipo{
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:999px;
+    font-size:11.5px;
+    font-weight:600;
+}
+.etiqueta-Aporte{ background:#eaf8ef; color:#006633; }
+.etiqueta-Desembolso{ background:#fdece9; color:#B03A2E; }
+.etiqueta-Pago{ background:#fff6e5; color:#8a6d00; }
+.etiqueta-Devolución{ background:#fdece9; color:#B03A2E; }
+.etiqueta-Retorno{ background:#eaf8ef; color:#006633; }
+.etiqueta-Varios{ background:#f0f0f0; color:#555; }

@@ -1,0 +1,59 @@
+.campo-ancho{ flex:1; min-width:220px; }
+.campo-ancho input{
+    width:100%;
+    padding:7px 10px;
+    border:1px solid #dcdcdc;
+    border-radius:8px;
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:13px;
+}
+
+.tabla-movimientos tbody tr{ cursor:pointer; }
+.tabla-movimientos tbody tr:hover{ background:#f7f9f7; }
+
+.modal-detalle{ max-width:640px; max-height:85vh; overflow-y:auto; }
+
+.detalle-encabezado{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    margin-bottom:16px;
+}
+.detalle-encabezado h3{ font-family:"IBM Plex Sans", sans-serif; color:#006633; font-size:18px; }
+.detalle-subtitulo{ font-family:"IBM Plex Mono", monospace; font-size:12.5px; color:#888; }
+
+.grid-detalle{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 20px;
+    margin-bottom:20px;
+}
+
+.dato-detalle{
+    display:flex; justify-content:space-between;
+    border-bottom:1px dashed #eee;
+    padding-bottom:6px;
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:13px;
+}
+.dato-detalle span{ color:#888; }
+.dato-detalle b{
+    font-family:"IBM Plex Mono", monospace;
+    font-weight:600; color:#0B4228;
+    font-variant-numeric:tabular-nums;
+}
+
+.titulo-pagos{
+    font-family:"IBM Plex Sans", sans-serif;
+    color:#006633; font-size:14px; margin-bottom:8px;
+}
+
+.tabla-pagos{
+    width:100%; border-collapse:collapse; font-size:12.5px;
+    font-family:"IBM Plex Sans", sans-serif;
+}
+.tabla-pagos th{
+    text-align:left; background:#f7f9f7; padding:6px 8px; color:#555;
+}
+.tabla-pagos td{
+    padding:6px 8px; border-top:1px solid #f0f0f0;
+    font-family:"IBM Plex Mono", monospace;
+}

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Administrativo — FACS</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="admin-panel.css">
+</head>
+<body>
+
+<header class="topbar">
+    <img src="logo.png" alt="Logo FACS" class="logo-mini">
+    <h1>Panel Administrativo — FACS</h1>
+    <div class="usuario-actual">
+        <span id="nombreUsuario"></span>
+        <button id="btnSalir">Salir</button>
+    </div>
+</header>
+
+<nav class="menu-lateral">
+    <a href="admin-panel.html" class="activo" id="navAdministradores" style="display:none">Administradores</a>
+    <a href="admin-dashboard.html">Dashboard financiero</a>
+    <a href="admin-movimientos.html">Movimientos</a>
+    <a href="admin-creditos.html">Créditos</a>
+    <a href="admin-mensajes.html">Mensajes <span id="contadorNoLeidos" class="badge"></span></a>
+    <a href="admin-comunicados.html">Comunicados</a>
+    <a href="admin-consultas.html">Consultas del portal</a>
+</nav>
+
+<main class="contenido">
+    <section id="seccionUsuarios">
+        <div class="encabezado-seccion">
+            <h2>Gestión de administradores</h2>
+            <button id="btnNuevoAdmin" class="btn-primario">+ Nuevo administrador</button>
+        </div>
+
+        <div id="soloSuperadmin" class="aviso" style="display:none">
+            Estás en modo consulta: solo el superadministrador puede crear, editar o desactivar cuentas.
+        </div>
+
+        <table class="tabla-admins">
+            <thead>
+                <tr>
+                    <th>Nombres y apellidos</th><th>Documento</th><th>Correo</th>
+                    <th>Rol</th><th>Estado</th><th>Creado</th><th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaAdminsBody"><tr><td colspan="7">Cargando...</td></tr></tbody>
+        </table>
+    </section>
+</main>
+
+<!-- Modal de clave temporal: no se cierra con clic afuera, a propósito -->
+<div id="modalClaveTemporal" class="modal-fondo" style="display:none">
+    <div class="modal-caja">
+        <h3>Contraseña temporal generada</h3>
+        <p class="nota-clave">
+            Documento: <strong id="claveTempDocumento"></strong><br>
+            Compártela por fuera del sistema (WhatsApp, de viva voz). Esta ventana es la
+            <strong>única vez</strong> que se muestra — no queda guardada en ningún lado.
+            Si la pierdes, usa "Generar nueva clave temporal" desde la tabla.
+        </p>
+        <div class="caja-copiar">
+            <input type="text" id="claveTempValor" readonly>
+            <button type="button" id="btnCopiarClave">Copiar</button>
+        </div>
+        <p id="avisoCopiado" class="mensaje exito" style="min-height:16px"></p>
+        <div class="acciones-modal-clave">
+            <button type="button" id="btnCerrarClaveTemporal" class="btn-primario">
+                Ya la copié — cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="modalAdmin" class="modal-fondo" style="display:none">
+    <div class="modal-caja">
+        <h3 id="tituloModal">Nuevo administrador</h3>
+        <form id="formAdmin">
+            <input type="hidden" id="adminUserId">
+            <label>Nombres</label>
+            <input type="text" id="campoNombres" required>
+            <label>Apellidos</label>
+            <input type="text" id="campoApellidos" required>
+            <label>Número de documento</label>
+            <input type="text" id="campoDocumento" required>
+            <label>Correo electrónico</label>
+            <input type="email" id="campoCorreo" required>
+            <label>Rol</label>
+            <select id="campoRol" required>
+                <option value="superadministrador">Superadministrador</option>
+                <option value="administrador">Administrador</option>
+                <option value="consulta">Consulta</option>
+            </select>
+            <div class="acciones-modal">
+                <button type="button" id="btnCancelarModal">Cancelar</button>
+                <button type="submit" id="btnGuardarModal" class="btn-primario">Guardar</button>
+            </div>
+            <p id="errorModal" class="mensaje error"></p>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="supabase.js"></script>
+<script src="admin-guard.js"></script>
+<script src="admin-usuarios.js"></script>
+</body>
+</html>

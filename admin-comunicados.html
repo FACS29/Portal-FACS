@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comunicados — FACS</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin-panel.css">
+<link rel="stylesheet" href="admin-movimientos.css">
+<link rel="stylesheet" href="admin-mensajes.css">
+<link rel="stylesheet" href="admin-comunicados.css">
+</head>
+<body>
+
+<header class="topbar">
+    <img src="logo.png" alt="Logo FACS" class="logo-mini">
+    <h1>Panel Administrativo — FACS</h1>
+    <div class="usuario-actual">
+        <span id="nombreUsuario"></span>
+        <button id="btnSalir">Salir</button>
+    </div>
+</header>
+
+<nav class="menu-lateral">
+    <a href="admin-panel.html" id="navAdministradores" style="display:none">Administradores</a>
+    <a href="admin-dashboard.html">Dashboard financiero</a>
+    <a href="admin-movimientos.html">Movimientos</a>
+    <a href="admin-creditos.html">Créditos</a>
+    <a href="admin-mensajes.html">Mensajes <span id="contadorNoLeidos" class="badge"></span></a>
+    <a href="admin-comunicados.html" class="activo">Comunicados</a>
+    <a href="admin-consultas.html">Consultas del portal</a>
+</nav>
+
+<main class="contenido">
+    <div class="encabezado-seccion">
+        <h2>Comunicados</h2>
+        <button id="btnNuevoComunicado" class="btn-primario">+ Nuevo comunicado</button>
+    </div>
+
+    <p class="texto-plano">
+        Un comunicado "Para todos" aparece para cualquiera que abra el portal. Uno
+        "Para un afiliado" solo aparece cuando esa persona consulta su documento.
+    </p>
+
+    <div id="listaComunicados" class="lista-mensajes">Cargando...</div>
+</main>
+
+<!-- Modal crear/editar comunicado -->
+<div id="modalComunicado" class="modal-fondo" style="display:none">
+    <div class="modal-caja">
+        <h3 id="tituloModalComunicado">Nuevo comunicado</h3>
+        <form id="formComunicado">
+            <input type="hidden" id="comunicadoId">
+
+            <label>Destinatario</label>
+            <select id="campoDestinatario">
+                <option value="todos">Para todos los afiliados</option>
+                <option value="uno">Para un afiliado específico</option>
+            </select>
+
+            <div id="bloqueBuscarAfiliado" style="display:none">
+                <label>Buscar afiliado (nombre, apellido o documento)</label>
+                <input type="text" id="buscarAfiliadoComunicado" placeholder="Ej: Rojas, o 123456789">
+                <div id="resultadosAfiliado" class="resultados-afiliado"></div>
+                <input type="hidden" id="documentoDestinoSeleccionado">
+                <p id="afiliadoSeleccionadoTexto" class="afiliado-seleccionado"></p>
+            </div>
+
+            <label>Título</label>
+            <input type="text" id="campoTitulo" required>
+
+            <label>Mensaje</label>
+            <textarea id="campoMensaje" rows="4" required></textarea>
+
+            <div class="acciones-modal">
+                <button type="button" id="btnCancelarComunicado">Cancelar</button>
+                <button type="submit" id="btnGuardarComunicado" class="btn-primario">Enviar</button>
+            </div>
+
+            <p id="errorComunicado" class="mensaje error"></p>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="supabase.js"></script>
+<script src="admin-guard.js"></script>
+<script src="admin-comunicados.js"></script>
+</body>
+</html>

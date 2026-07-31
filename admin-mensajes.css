@@ -1,0 +1,54 @@
+.badge{
+    display:inline-block;
+    background:#B03A2E;
+    color:#fff;
+    font-size:10px;
+    font-weight:bold;
+    border-radius:999px;
+    padding:1px 7px;
+    margin-left:6px;
+}
+.badge:empty{ display:none; }
+
+.lista-mensajes{ display:flex; flex-direction:column; gap:12px; }
+
+.tarjeta-mensaje{
+    background:#fff;
+    border:1px solid #E4EBE6;
+    border-radius:14px;
+    padding:16px 20px;
+    font-family:"IBM Plex Sans", sans-serif;
+}
+
+.tarjeta-mensaje.no-leido{ border-left:4px solid #B03A2E; }
+
+.mensaje-encabezado{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:8px;
+}
+
+.mensaje-remitente{ font-weight:600; color:#0B4228; font-size:14px; }
+.mensaje-fecha{ color:#999; font-size:12px; }
+
+.mensaje-texto{ color:#333; font-size:14px; line-height:1.5; margin-bottom:10px; }
+
+.mensaje-acciones button{
+    background:none;
+    border:1px solid #ccc;
+    border-radius:8px;
+    padding:5px 12px;
+    font-size:12px;
+    cursor:pointer;
+}
+.mensaje-acciones button:hover{ border-color:#006633; color:#006633; }
+
+.btn-eliminar{
+    border-color:#f0d0cc !important;
+    color:#B03A2E !important;
+}
+.btn-eliminar:hover{
+    background:#fdece9;
+    border-color:#B03A2E !important;
+}

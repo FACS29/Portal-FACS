@@ -1,0 +1,96 @@
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f2f5f8;
+    color:#333;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+}
+
+.login-card{
+    background:#ffffff;
+    border-radius:18px;
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+    padding:36px 32px;
+    width:100%;
+    max-width:380px;
+    text-align:center;
+}
+
+.logo{ width:90px; margin-bottom:12px; }
+
+h1{ color:#006633; font-size:22px; margin-bottom:4px; }
+
+.subtitulo{ color:#666; font-size:14px; margin-bottom:24px; }
+
+form{ text-align:left; }
+
+label{
+    display:block;
+    font-size:13px;
+    color:#444;
+    margin-bottom:4px;
+    margin-top:14px;
+}
+
+input{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid #dcdcdc;
+    border-radius:12px;
+    font-size:14px;
+    outline:none;
+    transition:border-color .15s, box-shadow .15s;
+}
+
+input:focus{
+    border-color:#006633;
+    box-shadow:0 6px 16px rgba(0,102,51,.10);
+}
+
+button[type="submit"]{
+    width:100%;
+    margin-top:22px;
+    padding:12px;
+    background:#006633;
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    font-size:15px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:background .15s;
+}
+
+button[type="submit"]:hover{ background:#008040; }
+button[type="submit"]:disabled{ background:#9bbfa9; cursor:not-allowed; }
+
+.link-recuperar{
+    display:block;
+    width:100%;
+    background:none;
+    border:none;
+    color:#006633;
+    font-size:13px;
+    margin-top:16px;
+    cursor:pointer;
+    text-decoration:underline;
+}
+
+.mensaje{ margin-top:16px; font-size:13px; min-height:18px; }
+.mensaje.error{ color:#b03a2e; }
+.mensaje.exito{ color:#006633; }
+
+.volver{
+    display:inline-block;
+    margin-top:22px;
+    font-size:13px;
+    color:#888;
+    text-decoration:none;
+}
+
+.volver:hover{ color:#006633; }

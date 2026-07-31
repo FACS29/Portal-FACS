@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créditos — FACS</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin-panel.css">
+<link rel="stylesheet" href="admin-movimientos.css">
+<link rel="stylesheet" href="admin-creditos.css">
+</head>
+<body>
+
+<header class="topbar">
+    <img src="logo.png" alt="Logo FACS" class="logo-mini">
+    <h1>Panel Administrativo — FACS</h1>
+    <div class="usuario-actual">
+        <span id="nombreUsuario"></span>
+        <button id="btnSalir">Salir</button>
+    </div>
+</header>
+
+<nav class="menu-lateral">
+    <a href="admin-panel.html" id="navAdministradores" style="display:none">Administradores</a>
+    <a href="admin-dashboard.html">Dashboard financiero</a>
+    <a href="admin-movimientos.html">Movimientos</a>
+    <a href="admin-creditos.html" class="activo">Créditos</a>
+    <a href="admin-mensajes.html">Mensajes <span id="contadorNoLeidos" class="badge"></span></a>
+    <a href="admin-comunicados.html">Comunicados</a>
+    <a href="admin-consultas.html">Consultas del portal</a>
+</nav>
+
+<main class="contenido">
+    <div class="encabezado-seccion"><h2>Buscar créditos</h2></div>
+
+    <div class="barra-filtros">
+        <div class="campo-filtro campo-ancho">
+            <label>Buscar (nombre, apellido o documento)</label>
+            <input type="text" id="buscarTexto" placeholder="Ej: Rojas, o 123456789">
+        </div>
+        <div class="campo-filtro">
+            <label>Empresa</label>
+            <select id="filtroEmpresa">
+                <option value="todas">Todas</option>
+                <option value="ELG">ELG</option>
+                <option value="HLG">HLG</option>
+                <option value="HSL">HSL</option>
+            </select>
+        </div>
+        <div class="campo-filtro">
+            <label>Estado</label>
+            <select id="filtroEstado">
+                <option value="todos">Todos</option>
+                <option value="Crédito Vigente">Vigente</option>
+                <option value="Paz y Salvo">Paz y Salvo</option>
+                <option value="Crédito Anulado">Anulado</option>
+            </select>
+        </div>
+        <div class="campo-filtro">
+            <label>Año</label>
+            <input type="number" id="filtroAnio" placeholder="Ej: 2025" min="2000" max="2100">
+        </div>
+        <button id="btnLimpiarFiltros" class="btn-secundario">Limpiar filtros</button>
+    </div>
+
+    <p class="resumen-filtros" id="resumenFiltros"></p>
+
+    <table class="tabla-movimientos">
+        <thead>
+            <tr>
+                <th>Código</th><th>Afiliado</th><th>Documento</th><th>Empresa</th>
+                <th>Estado</th><th>Valor</th><th>Saldo</th>
+            </tr>
+        </thead>
+        <tbody id="tablaCreditosBody"><tr><td colspan="7">Cargando...</td></tr></tbody>
+    </table>
+</main>
+
+<!-- Panel de detalle -->
+<div id="modalDetalle" class="modal-fondo" style="display:none">
+    <div class="modal-caja modal-detalle">
+        <div class="detalle-encabezado">
+            <div>
+                <h3 id="detalleNombre">—</h3>
+                <p class="detalle-subtitulo" id="detalleSubtitulo">—</p>
+            </div>
+            <button type="button" id="btnCerrarDetalle" class="btn-secundario">Cerrar</button>
+        </div>
+
+        <div class="grid-detalle">
+            <div class="dato-detalle"><span>Empresa</span><b id="detEmpresa">—</b></div>
+            <div class="dato-detalle"><span>Estado</span><b id="detEstado">—</b></div>
+            <div class="dato-detalle"><span>Fecha del crédito</span><b id="detFechaCredito">—</b></div>
+            <div class="dato-detalle"><span>Fecha primera cuota</span><b id="detFechaInicial">—</b></div>
+            <div class="dato-detalle"><span>Valor del crédito</span><b id="detValorCredito">—</b></div>
+            <div class="dato-detalle"><span>Valor real desembolsado</span><b id="detVrReal">—</b></div>
+            <div class="dato-detalle"><span>Saldo de capital</span><b id="detSaldo">—</b></div>
+            <div class="dato-detalle"><span>Cuota</span><b id="detCuota">—</b></div>
+            <div class="dato-detalle"><span>Cuotas pactadas / pagadas</span><b id="detCuotas">—</b></div>
+            <div class="dato-detalle"><span>Cuotas pendientes (estimado)</span><b id="detCuotasPendientes">—</b></div>
+            <div class="dato-detalle"><span>Capital pagado</span><b id="detCapitalPagado">—</b></div>
+            <div class="dato-detalle"><span>Interés pagado</span><b id="detInteresPagado">—</b></div>
+            <div class="dato-detalle"><span>Represteo</span><b id="detRepresteo">—</b></div>
+        </div>
+
+        <h4 class="titulo-pagos">Pagos registrados</h4>
+        <table class="tabla-pagos">
+            <thead>
+                <tr><th>Fecha</th><th>Cuota #</th><th>Capital</th><th>Interés</th><th>Saldo final</th></tr>
+            </thead>
+            <tbody id="tablaPagosBody"><tr><td colspan="5">—</td></tr></tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="supabase.js"></script>
+<script src="admin-guard.js"></script>
+<script src="admin-creditos.js"></script>
+</body>
+</html>

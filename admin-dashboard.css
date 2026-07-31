@@ -1,0 +1,229 @@
+:root{
+    --tinta: #0B1F17;
+    --verde: #006633;
+    --verde-oscuro: #0B4228;
+    --papel: #F7F9F7;
+    --oro: #C99B3F;
+    --alerta: #B03A2E;
+    --texto-suave: #5B6B62;
+    --borde: #E4EBE6;
+}
+
+.contenido-dash{ max-width:1120px; }
+.nota{ color:#888; font-size:14px; font-family:"IBM Plex Sans", sans-serif; }
+.nota-aviso{
+    color:#8a6d00; background:#fff6e9; border-radius:10px;
+    padding:10px 14px; font-size:13px; font-family:"IBM Plex Sans", sans-serif;
+    margin-bottom:14px;
+}
+
+/* ===== Franja hero ===== */
+.hero-financiero{
+    background: linear-gradient(135deg, var(--tinta) 0%, #14312399 120%), var(--tinta);
+    border-radius:22px;
+    padding:32px 36px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:32px;
+    margin-bottom:22px;
+    color:#fff;
+    box-shadow:0 14px 34px rgba(11,31,23,.28);
+}
+
+.hero-texto{ display:flex; flex-direction:column; gap:6px; }
+
+.hero-eyebrow{
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+    color:#9fd6b5;
+}
+
+.hero-cifra{
+    font-family:"IBM Plex Mono", monospace;
+    font-weight:600; font-size:46px; letter-spacing:-0.01em;
+    font-variant-numeric:tabular-nums;
+}
+
+.hero-delta{
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:13px; color:var(--oro);
+}
+
+.hero-desglose{
+    display:flex;
+    gap:18px;
+    margin-top:10px;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12.5px;
+}
+
+.hero-desglose .item-desglose{ color:#cfe9d9; }
+.hero-desglose .item-desglose b{ color:#fff; display:block; font-size:13px; }
+
+.hero-sparkline{
+    flex:1;
+    max-width:420px;
+    min-width:260px;
+    text-align:center;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1);
+    border-radius:16px;
+    padding:16px 22px 12px;
+}
+.contenedor-sparkline{ height:80px; }
+.hero-sparkline-etiqueta{
+    display:block; font-family:"IBM Plex Sans", sans-serif;
+    font-size:11px; color:#9fd6b5; margin-top:8px;
+}
+
+/* ===== Fila de KPI ===== */
+.fila-kpi{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(190px, 1fr));
+    gap:14px;
+    margin-bottom:22px;
+}
+
+.kpi{
+    background:#fff;
+    border:1px solid var(--borde);
+    border-radius:16px;
+    padding:16px 18px;
+}
+
+.kpi-etiqueta{
+    display:block; font-family:"IBM Plex Sans", sans-serif;
+    font-size:12px; color:var(--texto-suave); margin-bottom:8px;
+}
+
+.kpi-valor{
+    display:block;
+    font-family:"IBM Plex Mono", monospace;
+    font-weight:600; font-size:19px; color:var(--verde-oscuro);
+    font-variant-numeric:tabular-nums;
+}
+
+.kpi-desglose{
+    margin-top:10px;
+    padding-top:10px;
+    border-top:1px dashed var(--borde);
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+
+.kpi-desglose .fila-desglose{
+    display:flex;
+    justify-content:space-between;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12px;
+    color:var(--texto-suave);
+}
+
+.kpi-desglose .fila-desglose .etiqueta-empresa{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-family:"IBM Plex Sans", sans-serif;
+    color:var(--texto-suave);
+}
+
+.kpi-desglose .punto-empresa{
+    width:7px; height:7px; border-radius:50%; display:inline-block;
+}
+
+/* ===== Tarjetas de panel ===== */
+.tarjeta-panel{
+    background:#fff; border:1px solid var(--borde); border-radius:18px;
+    padding:24px; margin-bottom:20px;
+}
+
+.titulo-tarjeta{
+    font-family:"Fraunces", serif; font-weight:600; font-size:19px;
+    color:var(--tinta); margin-bottom:6px;
+}
+
+.texto-plano{
+    font-family:"IBM Plex Sans", sans-serif; font-size:13px;
+    color:var(--texto-suave); margin-bottom:16px; line-height:1.5;
+}
+
+.grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.grid-2 .tarjeta-panel{ margin-bottom:0; }
+
+/* ===== Contenedores de gráfica con altura FIJA =====
+   Esto es lo que evita el bug de Chart.js que hacia crecer la
+   grafica sin control: el canvas necesita un contenedor con
+   "position:relative" y una altura fija en CSS, no solo un atributo
+   height en el HTML. */
+.contenedor-grafica{ position:relative; width:100%; }
+.contenedor-mediano{ height:260px; }
+.contenedor-grande{ height:280px; }
+.contenedor-evolucion{ height:210px; }
+
+.barra-periodo{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    background:#fff;
+    border:1px solid var(--borde);
+    border-radius:14px;
+    padding:12px 18px;
+    margin-bottom:18px;
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:13px;
+    color:var(--texto-suave);
+}
+
+.barra-periodo select{
+    padding:6px 10px;
+    border:1px solid var(--borde);
+    border-radius:8px;
+    font-family:"IBM Plex Sans", sans-serif;
+    font-size:13px;
+    color:var(--tinta);
+}
+
+.nota-periodo{ font-size:11.5px; color:#999; }
+
+.kpi-hoy{ border-color:#d9c690; background:#fffaf0; }
+
+/* ===== Barra de salud de cartera ===== */
+.barra-salud{
+    background:#EEF3EF; border-radius:999px; height:14px;
+    overflow:hidden; margin-bottom:10px;
+}
+.barra-salud-relleno{
+    height:100%;
+    background:linear-gradient(90deg, var(--verde) 0%, var(--oro) 100%);
+    border-radius:999px; width:0%; transition:width 1s ease;
+}
+.barra-salud-leyenda{
+    display:flex; gap:20px; font-family:"IBM Plex Sans", sans-serif;
+    font-size:12px; color:var(--texto-suave);
+}
+.punto{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; }
+.punto-verde{ background:var(--verde); }
+.punto-claro{ background:#EEF3EF; border:1px solid var(--borde); }
+
+@media (max-width: 860px){
+    .hero-financiero{ flex-direction:column; align-items:flex-start; }
+    .hero-sparkline{ width:100%; }
+    .grid-2{ grid-template-columns:1fr; }
+}
+
+.tabla-represtamos th, .tabla-represtamos td{
+    padding-right:28px;
+}
+.tabla-represtamos .col-cantidad{
+    text-align:right;
+    padding-left:28px;
+    font-family:"IBM Plex Mono", monospace;
+    font-weight:600;
+}
+.tabla-represtamos th.col-cantidad{
+    font-family:"IBM Plex Sans", sans-serif;
+    font-weight:600;
+}

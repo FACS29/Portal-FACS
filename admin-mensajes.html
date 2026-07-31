@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mensajes de afiliados — FACS</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin-panel.css">
+<link rel="stylesheet" href="admin-movimientos.css">
+<link rel="stylesheet" href="admin-mensajes.css">
+</head>
+<body>
+
+<header class="topbar">
+    <img src="logo.png" alt="Logo FACS" class="logo-mini">
+    <h1>Panel Administrativo — FACS</h1>
+    <div class="usuario-actual">
+        <span id="nombreUsuario"></span>
+        <button id="btnSalir">Salir</button>
+    </div>
+</header>
+
+<nav class="menu-lateral">
+    <a href="admin-panel.html" id="navAdministradores" style="display:none">Administradores</a>
+    <a href="admin-dashboard.html">Dashboard financiero</a>
+    <a href="admin-movimientos.html">Movimientos</a>
+    <a href="admin-creditos.html">Créditos</a>
+    <a href="admin-mensajes.html" class="activo">Mensajes <span id="contadorNoLeidos" class="badge"></span></a>
+    <a href="admin-comunicados.html">Comunicados</a>
+    <a href="admin-consultas.html">Consultas del portal</a>
+</nav>
+
+<main class="contenido">
+    <div class="encabezado-seccion"><h2>Mensajes de afiliados</h2></div>
+
+    <div class="barra-filtros">
+        <div class="campo-filtro">
+            <label>Mostrar</label>
+            <select id="filtroLeido">
+                <option value="todos">Todos</option>
+                <option value="no-leidos">Solo no leídos</option>
+                <option value="leidos">Solo leídos</option>
+            </select>
+        </div>
+        <div class="campo-filtro">
+            <label>Orden</label>
+            <select id="ordenMensajes">
+                <option value="recientes">Más recientes primero</option>
+                <option value="antiguos">Más antiguos primero</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="listaMensajes" class="lista-mensajes">Cargando...</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="supabase.js"></script>
+<script src="admin-guard.js"></script>
+<script src="admin-mensajes.js"></script>
+</body>
+</html>

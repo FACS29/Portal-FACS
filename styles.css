@@ -5,7 +5,7 @@
 }
 
 body{
-    font-family:Arial, Helvetica, sans-serif;
+    font-family:"IBM Plex Sans", Arial, Helvetica, sans-serif;
     background:#f2f5f8;
     color:#333;
    
@@ -36,6 +36,8 @@ header{
 }
 
 h1{
+
+    font-family:"Fraunces", serif;
 
     color:#006633;
 
@@ -485,11 +487,11 @@ BARRA
 
     width:100%;
 
-    height:24px;
+    height:20px;
 
-    background:#DDD;
+    background:#EEF3EF;
 
-    border-radius:40px;
+    border-radius:999px;
 
     overflow:hidden;
 
@@ -497,25 +499,94 @@ BARRA
 
 .barra{
 
-    background:#006633;
+    background:linear-gradient(90deg, #006633 0%, #C99B3F 100%);
 
     height:100%;
 
     width:0;
 
+    border-radius:999px;
+
+    transition:width 1s ease;
+
+}
+
+.desglose-progreso{
+    display:flex;
+    gap:20px;
+    margin-top:10px;
+    font-size:12.5px;
+    color:#666;
+}
+
+.desglose-progreso .punto{
+    display:inline-block;
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    margin-right:5px;
+}
+
+.punto-capital{ background:#006633; }
+.punto-interes{ background:#C99B3F; }
+
+/*=========================
+COMUNICADOS DEL FONDO
+=========================*/
+.tarjeta-comunicado{
+    background:#fff;
+    border-left:4px solid #006633;
+    border-radius:12px;
+    padding:16px 20px;
+    margin-bottom:12px;
+    box-shadow:0 4px 14px rgba(0,0,0,.06);
+}
+
+.comunicado-titulo{
+    font-weight:bold;
+    color:#006633;
+    margin-bottom:6px;
+    font-size:15px;
+}
+
+.comunicado-texto{
+    color:#444;
+    font-size:14px;
+    line-height:1.5;
+    margin-bottom:8px;
+}
+
+.comunicado-fecha{
+    color:#999;
+    font-size:11px;
+}
+
+.tarjeta-comunicado-personal{
+    border-left-color:#C99B3F;
+    background:#fffaf0;
 }
 
 /*=========================
 TABLAS
 =========================*/
 
+.tabla-scroll{
+
+    overflow-x:auto;
+
+    border-radius:14px;
+
+    box-shadow:0 4px 14px rgba(0,0,0,.06);
+
+    margin-top:15px;
+
+}
+
 table{
 
     width:100%;
 
     border-collapse:collapse;
-
-    margin-top:15px;
 
 }
 
@@ -527,18 +598,30 @@ th{
 
     padding:12px;
 
-    font-size:14px;
+    font-size:13.5px;
+
+    font-family:"IBM Plex Sans", sans-serif;
+
+    white-space:nowrap;
 
 }
 
 td{
 
-    padding:11px;
+    padding:10px 11px;
 
-    border:1px solid #DDD;
+    border:none;
+
+    border-bottom:1px solid #EEF3EF;
 
     text-align:center;
 
+    font-size:13.5px;
+
+}
+
+tr:nth-child(even) td{
+    background:#F7F9F7;
 }
 
 /*=========================
@@ -1000,4 +1083,146 @@ SEGUIMIENTO DE CUOTAS
     color: #777;
     font-size: 14px;
     text-align: center;
+}
+/*=========================
+ENLACE DISCRETO AL PANEL ADMINISTRATIVO
+=========================*/
+.enlace-admin{
+    display:inline-block;
+    margin-top:14px;
+    font-size:11px;
+    color:#aaa;
+    text-decoration:none;
+}
+
+.enlace-admin:hover{
+    color:#006633;
+    text-decoration:underline;
+}
+
+/*=========================
+ENLACE AL BUZÓN DE SUGERENCIAS
+=========================*/
+.enlace-buzon{
+    display:inline-block;
+    margin-top:16px;
+    padding:8px 16px;
+    background:#f2f5f8;
+    color:#006633;
+    border-radius:20px;
+    font-size:13px;
+    text-decoration:none;
+    border:1px solid #dde5e0;
+}
+
+.enlace-buzon:hover{
+    background:#eaf8ef;
+    border-color:#006633;
+}
+
+/*=========================
+MODO OSCURO
+=========================*/
+.btn-modo-oscuro{
+    position:fixed;
+    top:16px;
+    right:16px;
+    background:#fff;
+    border:1px solid #ddd;
+    border-radius:999px;
+    width:40px;
+    height:40px;
+    font-size:18px;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(0,0,0,.1);
+    z-index:100;
+}
+
+body.oscuro{
+    background:#0B1F17;
+    color:#E4EBE6;
+}
+
+body.oscuro header,
+body.oscuro footer,
+body.oscuro .card,
+body.oscuro .seccion,
+body.oscuro .tarjeta-comunicado,
+body.oscuro .busqueda{
+    background:#14261D;
+    color:#E4EBE6;
+    box-shadow:0 4px 14px rgba(0,0,0,.35);
+}
+
+body.oscuro th{
+    background:#0B4228;
+}
+
+body.oscuro td{
+    border-bottom-color:#1F3A2C;
+    color:#E4EBE6;
+}
+
+body.oscuro tr:nth-child(even) td{
+    background:#182D22;
+}
+
+body.oscuro .progreso{
+    background:#1F3A2C;
+}
+
+body.oscuro .enlace-buzon{
+    background:#182D22;
+    border-color:#2A4A38;
+}
+
+body.oscuro .btn-modo-oscuro{
+    background:#14261D;
+    border-color:#2A4A38;
+    color:#E4EBE6;
+}
+
+/* ===== Modo oscuro: cobertura completa de tarjetas y textos ===== */
+body.oscuro .item,
+body.oscuro .grid .item{
+    background:#182D22;
+    border-color:#2A4A38;
+}
+
+body.oscuro .etiqueta{
+    color:#9fd6b5;
+}
+
+body.oscuro .valor,
+body.oscuro .estado-titulo,
+body.oscuro .estado-valor,
+body.oscuro .bienvenida-nombre,
+body.oscuro .bienvenida-saludo,
+body.oscuro .bienvenida-mensaje,
+body.oscuro .bienvenida-texto,
+body.oscuro .bienvenida-ultima-consulta,
+body.oscuro .desglose-progreso,
+body.oscuro .comunicado-texto,
+body.oscuro .sin-registros,
+body.oscuro .seccion h2{
+    color:#E4EBE6;
+}
+
+body.oscuro .comunicado-titulo{
+    color:#8fd4a8;
+}
+
+body.oscuro .nota-gracia{
+    background:#182D22;
+    color:#E4EBE6;
+    border-color:#2A4A38;
+}
+
+body.oscuro .btn-nueva-consulta{
+    background:#0B4228;
+    color:#fff;
+}
+
+body.oscuro .tabla-scroll{
+    background:#14261D;
 }
