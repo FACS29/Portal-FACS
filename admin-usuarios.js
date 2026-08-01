@@ -9,9 +9,9 @@
 */
 
 const URL_SERVIDOR_LOCAL =
-     window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-       ? "http://localhost:4001"
-       : "https://portal-facs.onrender.com";
+  window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://localhost:4001"
+    : "https://portal-facs.onrender.com";
 
 const NOMBRES_ROLES = {
     superadministrador: "Superadministrador",
@@ -255,7 +255,7 @@ async function restablecerClave(correo) {
     const clienteAuthPublico = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const { error } = await clienteAuthPublico.auth.resetPasswordForEmail(correo, {
-        redirectTo: window.location.origin + "/set-password.html"
+        redirectTo: new URL("set-password.html", window.location.href).href
     });
 
     if (error) {

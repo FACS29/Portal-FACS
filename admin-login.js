@@ -90,7 +90,7 @@ btnRecuperar.addEventListener("click", async function () {
     }
 
     const { error } = await clienteAuth.auth.resetPasswordForEmail(correo, {
-        redirectTo: window.location.origin + "/set-password.html"
+        redirectTo: new URL("set-password.html", window.location.href).href
     });
 
     if (error) {
