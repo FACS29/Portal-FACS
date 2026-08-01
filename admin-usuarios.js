@@ -276,18 +276,32 @@ async function eliminarAdmin(admin) {
         `Última confirmación: se borrará por completo el acceso y el perfil de ${nombreCompleto}. ¿Continuar?`
     )) return;
 
-    const respuesta = await fetch(`${URL_SERVIDOR_LOCAL}/api/administradores/${admin.user_id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${window.sesionAdmin.token}` }
-    });
+    try {
+        const respuesta = await fetch(`${URL_SERVIDOR_LOCAL}/api/administradores/${admin.user_id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${window.sesionAdmin.token}` }
+        });
 
-    if (!respuesta.ok) {
-        const datos = await respuesta.json();
-        alert(datos.error || "No se pudo eliminar el administrador.");
-        return;
+        if (!respuesta.ok) {
+            let mensaje = `No se pudo eliminar (código ${respuesta.status}).`;
+            try {
+                const datos = await respuesta.json();
+                mensaje = datos.error || mensaje;
+            } catch {
+                // La respuesta no era JSON (ej. una pagina de error del servidor).
+                // Nos quedamos con el mensaje generico que ya incluye el codigo.
+            }
+            alert(mensaje);
+            return;
+        }
+
+        await cargarAdministradores();
+    } catch (error) {
+        alert(
+            "No se pudo conectar con el servidor de administración. " +
+            "Verifica tu conexión a internet e inténtalo de nuevo. Detalle: " + error.message
+        );
     }
-
-    await cargarAdministradores();
 }
 
 async function restablecerClave(correo) {

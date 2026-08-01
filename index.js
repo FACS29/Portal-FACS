@@ -16,6 +16,19 @@ const { createClient } = require("@supabase/supabase-js");
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const URL_PANEL = process.env.URL_PANEL || "http://localhost:5500";
+
+// CORS compara contra el "origen" (protocolo + dominio) que envía el
+// navegador, que nunca incluye la ruta. Si URL_PANEL tiene una ruta
+// (ej: https://sitio.com/Portal-FACS) la comparacion nunca coincidiria,
+// asi que aqui nos quedamos solo con protocolo+dominio sin importar
+// como este escrita la variable en Render.
+const ORIGEN_PANEL = (() => {
+    try {
+        return new URL(URL_PANEL).origin;
+    } catch {
+        return URL_PANEL;
+    }
+})();
 const PORT = process.env.PORT || 4001;
 
 if (!SUPABASE_URL || !SERVICE_ROLE_KEY || SERVICE_ROLE_KEY.includes("PON_AQUI")) {
@@ -28,7 +41,7 @@ const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 });
 
 const app = express();
-app.use(cors({ origin: URL_PANEL }));
+app.use(cors({ origin: ORIGEN_PANEL }));
 app.use(express.json());
 
 async function requiereSuperadmin(req, res, next) {
