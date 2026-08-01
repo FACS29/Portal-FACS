@@ -28,7 +28,7 @@ const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
 });
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: URL_PANEL }));
 app.use(express.json());
 
 async function requiereSuperadmin(req, res, next) {
@@ -186,6 +186,36 @@ app.post("/api/administradores/:userId/activo", requiereSuperadmin, async (req, 
         .from("Administradores").update({ activo: !!activo }).eq("user_id", userId);
 
     if (error) return res.status(400).json({ error: error.message });
+    res.json({ ok: true });
+});
+
+/* ELIMINAR (solo si el perfil ya esta desactivado, como medida de
+   seguridad extra contra un clic accidental) */
+app.delete("/api/administradores/:userId", requiereSuperadmin, async (req, res) => {
+    const { userId } = req.params;
+
+    if (userId === req.usuarioActual.id) {
+        return res.status(400).json({ error: "No puedes eliminar tu propia cuenta." });
+    }
+
+    const { data: perfil, error: errorPerfil } = await supabaseAdmin
+        .from("Administradores")
+        .select("activo")
+        .eq("user_id", userId)
+        .single();
+
+    if (errorPerfil || !perfil) return res.status(404).json({ error: "Administrador no encontrado." });
+
+    if (perfil.activo) {
+        return res.status(400).json({ error: "Primero debes desactivar esta cuenta antes de eliminarla." });
+    }
+
+    await supabaseAdmin.from("Usuarios_Roles").delete().eq("user_id", userId);
+    await supabaseAdmin.from("Administradores").delete().eq("user_id", userId);
+
+    const { error: errorAuth } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (errorAuth) return res.status(400).json({ error: errorAuth.message });
+
     res.json({ ok: true });
 });
 

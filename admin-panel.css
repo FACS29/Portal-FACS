@@ -1,5 +1,5 @@
 *{ margin:0; padding:0; box-sizing:border-box; }
-body{ font-family:Arial, Helvetica, sans-serif; background:#f2f5f8; color:#333; }
+body{ font-family:"IBM Plex Sans", Arial, Helvetica, sans-serif; background:#f2f5f8; color:#333; }
 
 .topbar{
     background:#fff; padding:14px 24px; display:flex; align-items:center;
@@ -19,12 +19,53 @@ body{ font-family:Arial, Helvetica, sans-serif; background:#f2f5f8; color:#333; 
 .menu-lateral a.activo{ color:#006633; font-weight:bold; background:#eaf8ef; border-right:3px solid #006633; }
 .menu-lateral a.proximamente{ color:#bbb; cursor:not-allowed; }
 
+.badge{
+    display:inline-block;
+    min-width:18px;
+    padding:1px 6px;
+    background:#c0392b;
+    color:#fff;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:bold;
+    text-align:center;
+    line-height:1.5;
+    margin-left:4px;
+}
+.badge:empty{ display:none; }
+
 .contenido{ margin-left:200px; padding:28px; }
 
 .btn-menu{
     display:none;
     background:none; border:none; cursor:pointer;
     font-size:24px; line-height:1; color:#006633; padding:4px 10px;
+}
+
+.btn-volver-arriba{
+    position:fixed;
+    bottom:20px;
+    right:16px;
+    background:#006633;
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    width:44px;
+    height:44px;
+    font-size:20px;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(0,0,0,.2);
+    z-index:100;
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(10px);
+    transition:opacity .2s ease, transform .2s ease, visibility .2s;
+}
+
+.btn-volver-arriba.visible{
+    opacity:1;
+    visibility:visible;
+    transform:translateY(0);
 }
 
 .fondo-menu{
@@ -59,19 +100,28 @@ body{ font-family:Arial, Helvetica, sans-serif; background:#f2f5f8; color:#333; 
 
 .aviso{ background:#fff6e9; color:#8a6d00; padding:10px 14px; border-radius:10px; margin-bottom:16px; font-size:13px; }
 
+.tabla-scroll-panel{
+    overflow-x:auto;
+    border-radius:16px;
+}
+
 .tabla-admins{
     width:100%; border-collapse:collapse; background:#fff;
     border-radius:16px; overflow:hidden; box-shadow:0 6px 20px rgba(0,0,0,.08);
 }
 .tabla-admins th{ background:#006633; color:#fff; text-align:left; padding:12px 14px; font-size:13px; }
 .tabla-admins td{ padding:12px 14px; border-top:1px solid #f0f0f0; font-size:14px; }
+.tabla-admins th:first-child,
+.tabla-admins td:first-child{ min-width:190px; }
 .estado-activo{ color:#006633; font-weight:bold; }
 .estado-inactivo{ color:#b03a2e; font-weight:bold; }
 .tabla-admins button{
     background:none; border:1px solid #ddd; border-radius:8px;
-    padding:5px 10px; margin-right:6px; font-size:12px; cursor:pointer;
+    padding:5px 10px; margin-right:6px; margin-top:4px; font-size:12px; cursor:pointer;
 }
 .tabla-admins button:hover{ border-color:#006633; color:#006633; }
+.tabla-admins button.btn-eliminar{ border-color:#e0b4ae; color:#b03a2e; }
+.tabla-admins button.btn-eliminar:hover{ background:#b03a2e; border-color:#b03a2e; color:#fff; }
 
 .modal-fondo{
     position:fixed; inset:0; background:rgba(0,0,0,.35);

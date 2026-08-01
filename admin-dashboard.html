@@ -211,10 +211,38 @@
         <section class="tarjeta-panel">
             <h2 class="titulo-tarjeta">Top 5 represtamos</h2>
             <p class="texto-plano">Afiliados con más créditos otorgados históricamente (aproximación: cuenta todos los créditos por documento, incluye el original).</p>
-            <table class="tabla-movimientos tabla-represtamos" id="tablaRepresteos">
-                <thead><tr><th>Afiliado</th><th>Documento</th><th class="col-cantidad"># Créditos</th></tr></thead>
+            <div class="tabla-scroll-panel">
+            <table class="tabla-indicador tabla-represtamos" id="tablaRepresteos">
+                <thead><tr><th>Nombres y apellidos</th><th>Documento</th><th class="col-cantidad"># Créditos</th></tr></thead>
                 <tbody id="tablaRepresteosBody"><tr><td colspan="3">—</td></tr></tbody>
             </table>
+            </div>
+        </section>
+
+        <section class="tarjeta-panel">
+            <h2 class="titulo-tarjeta">Créditos próximos a terminar</h2>
+            <p class="texto-plano">Créditos vigentes a los que les quedan 2 cuotas o menos por pagar.</p>
+            <div class="tabla-scroll-panel">
+            <table class="tabla-indicador" id="tablaProximosTerminar">
+                <thead><tr><th>Nombres y apellidos</th><th>Documento</th><th>Empresa</th><th>Cuotas</th><th>Saldo pendiente</th></tr></thead>
+                <tbody id="tablaProximosTerminarBody"><tr><td colspan="5">—</td></tr></tbody>
+            </table>
+            </div>
+        </section>
+
+        <section class="tarjeta-panel">
+            <h2 class="titulo-tarjeta">Personal desafiliado con crédito vigente</h2>
+            <p class="texto-plano">Afiliados que ya se retiraron del sindicato pero aún tienen saldo pendiente en un crédito.</p>
+            <div class="tabla-scroll-panel">
+            <table class="tabla-indicador" id="tablaDesafiliados">
+                <thead><tr>
+                    <th>Nombres y apellidos</th><th>Valor del crédito</th><th>Saldo pendiente</th>
+                    <th>Saldo pagado</th><th>Cuotas</th>
+                    <th>Fecha inicial</th><th>Fecha final</th>
+                </tr></thead>
+                <tbody id="tablaDesafiliadosBody"><tr><td colspan="7">—</td></tr></tbody>
+            </table>
+            </div>
         </section>
 
     </div>
@@ -224,6 +252,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="supabase.js"></script>
 <script src="admin-guard.js"></script>
+<button id="btnVolverArriba" class="btn-volver-arriba" title="Volver arriba">&#8593;</button>
 <script src="admin-menu.js"></script>
 <script src="admin-dashboard.js"></script>
 </body>

@@ -22,13 +22,20 @@ async function requerirSesion() {
 
     const { data: perfil, error: errorPerfil } = await clienteAuth
         .from("Administradores")
-        .select("nombres, apellidos, correo, activo")
+        .select("nombres, apellidos, correo, activo, debe_cambiar_clave")
         .eq("user_id", session.user.id)
         .single();
 
     if (errorPerfil || !perfil || perfil.activo === false) {
         await clienteAuth.auth.signOut();
         window.location.href = "admin-login.html";
+        return null;
+    }
+
+    const enPaginaDeClave = window.location.pathname.endsWith("set-password.html");
+
+    if (perfil.debe_cambiar_clave && !enPaginaDeClave) {
+        window.location.href = "set-password.html";
         return null;
     }
 

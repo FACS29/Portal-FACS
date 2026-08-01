@@ -19,6 +19,8 @@
 
 <button id="btnModoOscuro" class="btn-modo-oscuro" title="Cambiar a modo oscuro">🌙</button>
 
+<button id="btnVolverArriba" class="btn-volver-arriba" title="Volver arriba">↑</button>
+
 <header>
 
     <img src="logo.png" class="logo">
@@ -83,6 +85,8 @@
             <input
                 type="text"
                 id="documento"
+                inputmode="numeric"
+                autocomplete="off"
                 placeholder="Ingrese su número de documento">
 
             <button id="btnConsultar">
@@ -90,6 +94,8 @@
                 CONSULTAR MI CRÉDITO
 
             </button>
+
+            <div id="errorConsulta" class="mensaje-error" style="display:none"></div>
 
         </div>
 

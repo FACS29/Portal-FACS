@@ -1,4 +1,16 @@
 document.addEventListener("DOMContentLoaded", () => {
+    const btnVolverArriba = document.getElementById("btnVolverArriba");
+
+    if (btnVolverArriba) {
+        window.addEventListener("scroll", () => {
+            btnVolverArriba.classList.toggle("visible", window.scrollY > 400);
+        });
+
+        btnVolverArriba.addEventListener("click", () => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+    }
+
     const btnMenu = document.getElementById("btnMenu");
     const menu = document.querySelector(".menu-lateral");
     const fondo = document.getElementById("fondoMenu");

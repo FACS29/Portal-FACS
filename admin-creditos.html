@@ -69,6 +69,7 @@
 
     <p class="resumen-filtros" id="resumenFiltros"></p>
 
+    <div class="tabla-scroll-panel">
     <table class="tabla-movimientos">
         <thead>
             <tr>
@@ -78,6 +79,7 @@
         </thead>
         <tbody id="tablaCreditosBody"><tr><td colspan="7">Cargando...</td></tr></tbody>
     </table>
+    </div>
 </main>
 
 <!-- Panel de detalle -->
@@ -108,18 +110,21 @@
         </div>
 
         <h4 class="titulo-pagos">Pagos registrados</h4>
+        <div class="tabla-scroll-panel">
         <table class="tabla-pagos">
             <thead>
                 <tr><th>Fecha</th><th>Cuota #</th><th>Capital</th><th>Interés</th><th>Saldo final</th></tr>
             </thead>
             <tbody id="tablaPagosBody"><tr><td colspan="5">—</td></tr></tbody>
         </table>
+        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supabase.js"></script>
 <script src="admin-guard.js"></script>
+<button id="btnVolverArriba" class="btn-volver-arriba" title="Volver arriba">&#8593;</button>
 <script src="admin-menu.js"></script>
 <script src="admin-creditos.js"></script>
 </body>

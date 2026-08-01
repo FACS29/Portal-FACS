@@ -19,6 +19,12 @@ function formatearDocumento(valor) {
     return limpio ? Number(limpio).toLocaleString("es-CO") : (valor || "—");
 }
 
+function escaparHtml(texto) {
+    const div = document.createElement("div");
+    div.textContent = texto ?? "";
+    return div.innerHTML;
+}
+
 let mensajesCompletos = [];
 let esSuperadmin = false;
 
@@ -76,8 +82,7 @@ function renderizar() {
 
     if (!lista.length) {
         contenedor.innerHTML = mensajesCompletos.length === 0
-            ? `<p>No hay mensajes registrados todavía, o el panel no tiene permiso para verlos.
-               Confirma que ejecutaste <code>Tarea9_Mensajes.sql</code> completo en Supabase.</p>`
+            ? `<p>No hay mensajes registrados todavía.</p>`
             : "<p>No hay mensajes para mostrar con este filtro.</p>";
         return;
     }
@@ -86,11 +91,11 @@ function renderizar() {
         <div class="tarjeta-mensaje ${m.leido ? "" : "no-leido"}">
             <div class="mensaje-encabezado">
                 <span class="mensaje-remitente">
-                    ${m.nombre || "Afiliado"} · Documento ${formatearDocumento(m.documento)}
+                    ${escaparHtml(m.nombre) || "Afiliado"} · Documento ${formatearDocumento(m.documento)}
                 </span>
                 <span class="mensaje-fecha">${formatearFechaHora(m.creado_en)}</span>
             </div>
-            <p class="mensaje-texto">${m.mensaje}</p>
+            <p class="mensaje-texto">${escaparHtml(m.mensaje)}</p>
             <div class="mensaje-acciones">
                 <button data-accion="leido" data-id="${m.id}">
                     ${m.leido ? "Marcar como no leído" : "Marcar como leído"}

@@ -89,6 +89,7 @@
 
     <p class="resumen-filtros" id="resumenFiltros"></p>
 
+    <div class="tabla-scroll-panel">
     <table class="tabla-movimientos">
         <thead>
             <tr>
@@ -100,6 +101,7 @@
             <tr><td colspan="7">Cargando...</td></tr>
         </tbody>
     </table>
+    </div>
 </main>
 
 <div id="modalGrupo" class="modal-fondo" style="display:none">
@@ -111,18 +113,21 @@
             </div>
             <button type="button" id="btnCerrarGrupo" class="btn-secundario">Cerrar</button>
         </div>
+        <div class="tabla-scroll-panel">
         <table class="tabla-pagos">
             <thead>
                 <tr><th>Fecha</th><th>Tipo</th><th>Empresa</th><th>Referencia</th><th>Valor</th></tr>
             </thead>
             <tbody id="tablaGrupoBody"></tbody>
         </table>
+        </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supabase.js"></script>
 <script src="admin-guard.js"></script>
+<button id="btnVolverArriba" class="btn-volver-arriba" title="Volver arriba">&#8593;</button>
 <script src="admin-menu.js"></script>
 <script src="admin-movimientos.js"></script>
 </body>

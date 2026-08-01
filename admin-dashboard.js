@@ -52,6 +52,20 @@ function formatearFechaCorta(fechaISO) {
     return `${meses[parseInt(mes, 10) - 1]} ${anio}`;
 }
 
+function formatearFecha(f) {
+    if (!f) return "—";
+    const [a, m, d] = f.split("-");
+    return `${d}/${m}/${a}`;
+}
+
+function formatearCuotas(pagadas, pactadas) {
+    const formatearParte = (valor) => {
+        const n = Number(valor || 0);
+        return Number.isInteger(n) ? String(n).padStart(2, "0") : n.toFixed(1).replace(".", ",");
+    };
+    return `${formatearParte(pagadas)}/${formatearParte(pactadas)}`;
+}
+
 const PALETA_EMPRESAS = { ELG: "#006633", HLG: "#C99B3F", HSL: "#5B6B62" };
 const ESTADO_VIGENTE = "Crédito Vigente";
 const ESTADO_ANULADO = "Crédito Anulado";
@@ -156,7 +170,9 @@ async function cargarDatos() {
     const [capitalRes, creditosRes, pagosRes, afiliadosRes] = await Promise.all([
         clienteAuth.from("Capital_Semilla").select("fecha, empresa, valor").order("fecha"),
         clienteAuth.from("Creditos").select(
-            "Codigo_Credito, Documento, Empresa, Vr_Real, Saldo_Capital, Estado, Fecha_Credito"
+            "Codigo_Credito, Documento, Empresa, Vr_Real, Valor_Credito, " +
+            "Saldo_Capital, Capital_Pagado, Cuotas_Pactadas, Cuotas_Pagadas, " +
+            "Estado, Fecha_Credito, Fecha_Inicial, Fecha_Final"
         ),
         clienteAuth.from("Pagos").select("Codigo_Credito, Capital_Pagado, Interes_Pagado, Fecha"),
         clienteAuth.from("Afiliados").select("Documento, Nombre, Afiliado, Fecha_Retiro_Sind")
@@ -196,7 +212,12 @@ async function cargarDatos() {
 
     datosCompletos = {
         capital: (capitalRes.data || []).map((f) => ({ ...f, fecha: normalizarFecha(f.fecha) })),
-        creditos: (creditosRes.data || []).map((c) => ({ ...c, Fecha_Credito: normalizarFecha(c.Fecha_Credito) })),
+        creditos: (creditosRes.data || []).map((c) => ({
+            ...c,
+            Fecha_Credito: normalizarFecha(c.Fecha_Credito),
+            Fecha_Inicial: normalizarFecha(c.Fecha_Inicial),
+            Fecha_Final: normalizarFecha(c.Fecha_Final)
+        })),
         pagos: (pagosRes.data || []).map((p) => ({ ...p, Fecha: normalizarFecha(p.Fecha) })),
         afiliados: afiliadosDatos,
         anulados: anuladosDatos.map((a) => ({
@@ -292,7 +313,7 @@ function recalcularYRenderizar(periodo) {
     const porcentajeCapitalUsado = capitalTotalHoy ? (carteraVigenteHoy / capitalTotalHoy) * 100 : 0;
     document.getElementById("heroDelta").textContent =
         `${porcentajeCapitalUsado.toFixed(1)}% del capital semilla está hoy prestado (vigente)`;
-    pintarDesglose("heroDesglose", disponiblePorEmpresa, formatearMoneda, true);
+    pintarDesglose("heroDesglose", disponiblePorEmpresa, formatearMoneda);
 
     document.getElementById("kpiCapitalTotal").textContent = formatearMoneda(capitalTotal);
     pintarDesglose("desgloseCapitalTotal", sumarPorEmpresa(capital, "empresa", "valor"), formatearMoneda);
@@ -538,4 +559,56 @@ function recalcularYRenderizar(periodo) {
 
     document.getElementById("cargando").style.display = "none";
     document.getElementById("cuerpoDashboard").style.display = "block";
+
+    // Créditos próximos a terminar (vigentes, 2 cuotas o menos por pagar)
+    const proximosATerminar = creditosVigentesHoy
+        .map((c) => ({
+            ...c,
+            cuotasRestantes: Number(c.Cuotas_Pactadas || 0) - Number(c.Cuotas_Pagadas || 0)
+        }))
+        .filter((c) => c.cuotasRestantes > 0 && c.cuotasRestantes <= 2)
+        .sort((a, b) => a.cuotasRestantes - b.cuotasRestantes);
+
+    const cuerpoProximos = document.getElementById("tablaProximosTerminarBody");
+    if (cuerpoProximos) {
+        cuerpoProximos.innerHTML = proximosATerminar.length
+            ? proximosATerminar.map((c) => `
+                <tr>
+                    <td>${nombresPorDoc[String(c.Documento || "").replace(/\D/g, "")] || "—"}</td>
+                    <td>${formatearDocumento(c.Documento)}</td>
+                    <td>${c.Empresa || "—"}</td>
+                    <td>${formatearCuotas(c.Cuotas_Pagadas, c.Cuotas_Pactadas)}</td>
+                    <td>${formatearMoneda(c.Saldo_Capital)}</td>
+                </tr>
+            `).join("")
+            : `<tr><td colspan="5">No hay créditos a punto de terminar.</td></tr>`;
+    }
+
+    // Personal desafiliado con crédito vigente
+    const documentosDesafiliados = new Set(
+        afiliadosTodo
+            .filter((a) => !!a.Fecha_Retiro_Sind)
+            .map((a) => String(a.Documento || "").replace(/\D/g, ""))
+    );
+
+    const desafiliadosConCredito = creditosVigentesHoy.filter((c) =>
+        documentosDesafiliados.has(String(c.Documento || "").replace(/\D/g, ""))
+    );
+
+    const cuerpoDesafiliados = document.getElementById("tablaDesafiliadosBody");
+    if (cuerpoDesafiliados) {
+        cuerpoDesafiliados.innerHTML = desafiliadosConCredito.length
+            ? desafiliadosConCredito.map((c) => `
+                <tr>
+                    <td>${nombresPorDoc[String(c.Documento || "").replace(/\D/g, "")] || "—"}</td>
+                    <td>${formatearMoneda(c.Valor_Credito)}</td>
+                    <td>${formatearMoneda(c.Saldo_Capital)}</td>
+                    <td>${formatearMoneda(c.Capital_Pagado)}</td>
+                    <td>${formatearCuotas(c.Cuotas_Pagadas, c.Cuotas_Pactadas)}</td>
+                    <td>${formatearFecha(c.Fecha_Inicial)}</td>
+                    <td>${formatearFecha(c.Fecha_Final)}</td>
+                </tr>
+            `).join("")
+            : `<tr><td colspan="7">No hay personal desafiliado con crédito vigente.</td></tr>`;
+    }
 }

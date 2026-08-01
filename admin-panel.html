@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel Administrativo — FACS</title>
 <meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="admin-panel.css">
 </head>
 <body>
@@ -12,7 +14,7 @@
 <header class="topbar">
     <button id="btnMenu" class="btn-menu" aria-label="Abrir menú">&#9776;</button>
     <img src="logo.png" alt="Logo FACS" class="logo-mini">
-    <h1>Panel Administrativo — FACS</h1>
+    <h1>Panel Administrativo - FACS</h1>
     <div class="usuario-actual">
         <span id="nombreUsuario"></span>
         <button id="btnSalir">Salir</button>
@@ -41,6 +43,7 @@
             Estás en modo consulta: solo el superadministrador puede crear, editar o desactivar cuentas.
         </div>
 
+        <div class="tabla-scroll-panel">
         <table class="tabla-admins">
             <thead>
                 <tr>
@@ -50,6 +53,7 @@
             </thead>
             <tbody id="tablaAdminsBody"><tr><td colspan="7">Cargando...</td></tr></tbody>
         </table>
+        </div>
     </section>
 </main>
 
@@ -107,6 +111,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="supabase.js"></script>
 <script src="admin-guard.js"></script>
+<button id="btnVolverArriba" class="btn-volver-arriba" title="Volver arriba">&#8593;</button>
 <script src="admin-menu.js"></script>
 <script src="admin-usuarios.js"></script>
 </body>

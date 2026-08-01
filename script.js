@@ -54,7 +54,11 @@ async function cargarDatos() {
             document.getElementById(
                 "ultimaActualizacion"
             ).textContent = fecha.toLocaleString(
-                "es-CO"
+                "es-CO",
+                {
+                    day: "2-digit", month: "2-digit", year: "numeric",
+                    hour: "2-digit", minute: "2-digit", second: "2-digit"
+                }
             );
 
         }
@@ -113,6 +117,40 @@ function formatearFecha(fecha) {
 
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
 
+}
+
+function escaparHtml(texto) {
+    const div = document.createElement("div");
+    div.textContent = texto ?? "";
+    return div.innerHTML;
+}
+
+function construirResumenCopiable(vigente, nombreAfiliado, documento, mesesGraciaYParciales) {
+    const documentoFormateado = Number.isFinite(Number(documento))
+        ? Number(documento).toLocaleString("es-CO")
+        : documento;
+
+    const lineas = [
+        `Nombre: ${nombreAfiliado || ""}`,
+        `Documento: ${documentoFormateado}`,
+        `Código de crédito: ${formatoCodigoCredito(vigente["Codigo Credito"])}`,
+        `Estado: ${vigente.Estado || ""}`,
+        `Valor del crédito: ${formatoMoneda(vigente["Valor Credito"])}`,
+        `Saldo pendiente: ${formatoMoneda(vigente["Saldo Capital"])}`,
+        `Capital pagado: ${formatoMoneda(vigente["Capital Pagado"])}`,
+        `Cuotas: ${vigente["Cuotas Pagadas"] || 0} de ${vigente["Cuotas Pactadas"] || 0}`,
+        `Fecha inicial: ${vigente["Fecha Inicial"] || ""}`,
+        `Fecha final: ${vigente["Fecha Final"] || ""}`,
+        `Próximo pago: ${vigente["Proximo Pago"] || ""}`
+    ];
+
+    if (mesesGraciaYParciales > 0) {
+        lineas.push(
+            `Nota: Este crédito registra ${formatearMeses(mesesGraciaYParciales)} mes(es) de gracia y/o pagos parciales, situación que generó una ampliación del plazo inicialmente pactado.`
+        );
+    }
+
+    return lineas.join("\n");
 }
 
 // Para timestamps completos (con hora), como fecha_publicacion de
@@ -442,7 +480,7 @@ function construirInformacionCredito(vigente) {
 
 }
 
-function construirFechasCredito(vigente) {
+function construirFechasCredito(vigente, mesesGracia) {
 
     return `
 
@@ -509,8 +547,8 @@ function construirFechasCredito(vigente) {
                 <div class="valor">
 
                      ${
-                     Number(vigente.TGracia) > 0
-                      ? vigente.TGracia + " mes(es)"
+                     mesesGracia > 0
+                      ? mesesGracia + " mes(es)"
                      : "No aplica"
                      }
 
@@ -528,10 +566,28 @@ function construirFechasCredito(vigente) {
 
 async function consultar() {
 
-const documento =
+let documento =
     document.getElementById("documento").value.trim();
 
 if (!documento) return;
+
+const MARCA_CONSULTA_INTERNA = /000$/;
+const esConsultaInterna = MARCA_CONSULTA_INTERNA.test(documento);
+
+if (esConsultaInterna) {
+    documento = documento.replace(MARCA_CONSULTA_INTERNA, "").trim();
+}
+
+const btnConsultar = document.getElementById("btnConsultar");
+const errorConsulta = document.getElementById("errorConsulta");
+
+if (errorConsulta) errorConsulta.style.display = "none";
+
+const textoOriginalBoton = btnConsultar.textContent;
+btnConsultar.disabled = true;
+btnConsultar.textContent = "Consultando...";
+
+try {
 
 const ultimaConsulta = await obtenerUltimaConsulta(
     documento
@@ -550,9 +606,6 @@ const respuesta = await fetch(
 );
 
 const registrosBD = await respuesta.json();
-
-console.log(registrosBD);
-console.log(registrosBD.length);
 
 let nombreAfiliado = "";
 let fechaRetiroSind = "";
@@ -753,6 +806,16 @@ if (porcentaje <= 1) {
     porcentaje = porcentaje * 100;
 }
 
+const cronograma = construirTablaAmortizacion(
+    vigente,
+    pagos,
+    window.fechaActualizacionReal
+);
+
+const textoParaCopiar = esConsultaInterna
+    ? construirResumenCopiable(vigente, nombreAfiliado, documento, cronograma.mesesGraciaYParciales)
+    : "";
+
 let html = `
 
 <div class="card">
@@ -769,6 +832,12 @@ let html = `
 
     </div>
 
+    ${esConsultaInterna ? `
+    <div style="text-align:center;margin-top:14px;">
+        <button id="btnCopiarDatos" type="button" class="btn-copiar-interno">📋 Copiar datos del crédito</button>
+    </div>
+    ` : ""}
+
     ${construirDatosDeudor(
     vigente,
     nombreAfiliado,
@@ -779,7 +848,7 @@ let html = `
 
    ${construirInformacionCredito(vigente)}
 
-   ${construirFechasCredito(vigente)}
+   ${construirFechasCredito(vigente, cronograma.mesesGracia)}
 
       <div class="seccion">
 
@@ -890,11 +959,7 @@ let html = `
 
     </div>
 
-     ${construirTablaAmortizacion(
-     vigente,
-     pagos,
-     window.fechaActualizacionReal
-     )}
+     ${cronograma.html}
      
      `;
 
@@ -940,6 +1005,8 @@ html += `
 <div class="card">
 
     <h2>Historial de Créditos del Afiliado</h2>
+
+    <div class="pista-scroll">↔ Desliza para ver más</div>
 
     <div class="tabla-scroll">
     <table>
@@ -1057,10 +1124,12 @@ if (textoUltimaConsulta) {
 
 }
 
-await registrarConsulta(
-    documento,
-    vigente["Codigo Credito"]
-);
+if (!esConsultaInterna) {
+    await registrarConsulta(
+        documento,
+        vigente["Codigo Credito"]
+    );
+}
 
  const bienvenida = document.querySelector(".bienvenida");
 
@@ -1082,6 +1151,40 @@ if (bienvenida) {
     .getElementById("btnNuevaConsulta")
     .addEventListener("click", mostrarBusqueda);
 
+const btnCopiarDatos = document.getElementById("btnCopiarDatos");
+
+if (btnCopiarDatos) {
+    btnCopiarDatos.addEventListener("click", async () => {
+        try {
+            await navigator.clipboard.writeText(textoParaCopiar);
+            btnCopiarDatos.textContent = "✅ Copiado";
+        } catch (error) {
+            btnCopiarDatos.textContent = "No se pudo copiar";
+        }
+
+        setTimeout(() => {
+            btnCopiarDatos.textContent = "📋 Copiar datos del crédito";
+        }, 2000);
+    });
+}
+
+} catch (error) {
+
+    console.error("Error al consultar el crédito:", error);
+
+    if (errorConsulta) {
+        errorConsulta.textContent =
+            "No fue posible completar la consulta. Verifica tu conexión a internet e inténtalo de nuevo.";
+        errorConsulta.style.display = "block";
+    }
+
+} finally {
+
+    btnConsultar.disabled = false;
+    btnConsultar.textContent = textoOriginalBoton;
+
+}
+
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -1091,6 +1194,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     mostrarBusqueda();
 
     cargarComunicados();
+
+    const btnVolverArriba = document.getElementById("btnVolverArriba");
+
+    if (btnVolverArriba) {
+
+        window.addEventListener("scroll", () => {
+            btnVolverArriba.classList.toggle("visible", window.scrollY > 400);
+        });
+
+        btnVolverArriba.addEventListener("click", () => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+
+    }
 
     document
         .getElementById("btnConsultar")
@@ -1109,6 +1226,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
 
 });
+
+function formatearMeses(valor) {
+    return Number.isInteger(valor) ? String(valor) : valor.toFixed(1).replace(".", ",");
+}
 
 function mismoMes(fecha1, fecha2) {
 
@@ -1143,7 +1264,9 @@ function construirTablaAmortizacion(
 
         <h2>Cronograma de Pagos y Amortización</h2>
 
-        <div class="tabla-scroll">
+        <div class="pista-scroll">↔ Desliza para ver más</div>
+
+    <div class="tabla-scroll">
         <table>
 
             <tr>
@@ -1177,6 +1300,8 @@ function construirTablaAmortizacion(
     const diaPago = vigente.Empresa === "ELG" ? 25 : 30;
 
     let cuotasExtra = 0;
+    let mesesGraciaCompleta = 0;
+    let mesesPagoParcial = 0;
     let totalCapital = 0;
     let totalInteres = 0;
     let totalCuota = 0;
@@ -1287,6 +1412,7 @@ if (
     estado = "🟡 Pago Parcial";
 
     cuotasExtra++;
+    mesesPagoParcial++;
 
     } else {
 
@@ -1335,6 +1461,7 @@ const yaPaso =
     estado = "🔵 Tiempo de Gracia";
 
     cuotasExtra++;
+    mesesGraciaCompleta++;
     
 } else {
 
@@ -1384,7 +1511,7 @@ const yaPaso =
 
 html += `
 
-    <tr style="font-weight:bold;background:#f5f5f5;">
+    <tr class="fila-totales" style="font-weight:bold;">
 
             <td colspan="3">Totales</td>
 
@@ -1395,9 +1522,9 @@ html += `
         <td>${formatoMoneda(totalCuota)}</td>
         
         <td></td>
- <td colspan="3">
+ <td>
 
-            ${creditoAnulado ? "❌ Crédito Anulado" : "Totales"}
+            ${creditoAnulado ? "❌ Crédito Anulado" : ""}
 
         </td>
 
@@ -1420,7 +1547,7 @@ html += `
 
         <strong>Nota:</strong>
 
-        Este crédito registra <strong>${vigente.TGracia}</strong> mes(es) de gracia y/o pagos parciales, situación que generó una ampliación del plazo inicialmente pactado.
+        Este crédito registra <strong>${formatearMeses(mesesGraciaCompleta + mesesPagoParcial * 0.5)}</strong> mes(es) de gracia y/o pagos parciales, situación que generó una ampliación del plazo inicialmente pactado.
 
     </div>
 
@@ -1434,7 +1561,11 @@ html += `
 
 `;
 
-return html;
+return {
+    html,
+    mesesGracia: mesesGraciaCompleta,
+    mesesGraciaYParciales: mesesGraciaCompleta + mesesPagoParcial * 0.5
+};
 
 }
 /*
@@ -1464,8 +1595,8 @@ async function cargarComunicadosPersonales(documentoConsultado) {
 
         const bloquePersonal = personales.map(c => `
             <div class="tarjeta-comunicado tarjeta-comunicado-personal">
-                <div class="comunicado-titulo">Para ti: ${c.titulo}</div>
-                <div class="comunicado-texto">${c.mensaje}</div>
+                <div class="comunicado-titulo">Para ti: ${escaparHtml(c.titulo)}</div>
+                <div class="comunicado-texto">${escaparHtml(c.mensaje)}</div>
                 <div class="comunicado-fecha">${formatearFechaHora(c.fecha_publicacion)}</div>
             </div>
         `).join("");
@@ -1515,8 +1646,8 @@ async function cargarComunicados() {
 
         contenedor.innerHTML = comunicados.map(c => `
             <div class="tarjeta-comunicado">
-                <div class="comunicado-titulo">${c.titulo}</div>
-                <div class="comunicado-texto">${c.mensaje}</div>
+                <div class="comunicado-titulo">${escaparHtml(c.titulo)}</div>
+                <div class="comunicado-texto">${escaparHtml(c.mensaje)}</div>
                 <div class="comunicado-fecha">${formatearFechaHora(c.fecha_publicacion)}</div>
             </div>
         `).join("");

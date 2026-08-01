@@ -52,14 +52,26 @@
 
 .hero-desglose{
     display:flex;
-    gap:18px;
+    flex-direction:column;
+    gap:6px;
     margin-top:10px;
     font-family:"IBM Plex Mono", monospace;
     font-size:12.5px;
 }
 
-.hero-desglose .item-desglose{ color:#cfe9d9; }
-.hero-desglose .item-desglose b{ color:#fff; display:block; font-size:13px; }
+.hero-desglose .fila-desglose{
+    display:flex;
+    justify-content:space-between;
+    color:#fff;
+}
+
+.hero-desglose .fila-desglose .etiqueta-empresa{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-family:"IBM Plex Sans", sans-serif;
+    color:#cfe9d9;
+}
 
 .hero-sparkline{
     flex:1;
@@ -214,16 +226,48 @@
     .grid-2{ grid-template-columns:1fr; }
 }
 
-.tabla-represtamos th, .tabla-represtamos td{
-    padding-right:28px;
+.tabla-scroll-panel{
+    overflow-x:auto;
+    border-radius:14px;
+    box-shadow:0 4px 14px rgba(0,0,0,.06);
 }
+
 .tabla-represtamos .col-cantidad{
     text-align:right;
-    padding-left:28px;
     font-family:"IBM Plex Mono", monospace;
     font-weight:600;
 }
 .tabla-represtamos th.col-cantidad{
     font-family:"IBM Plex Sans", sans-serif;
     font-weight:600;
+}
+
+.tabla-indicador{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+}
+
+.tabla-indicador th{
+    background:#006633;
+    color:#fff;
+    padding:10px 14px;
+    text-align:center;
+    white-space:nowrap;
+}
+
+.tabla-indicador td{
+    padding:10px 14px;
+    border-bottom:1px solid #eee;
+    text-align:center;
+}
+
+.tabla-indicador th:first-child,
+.tabla-indicador td:first-child{
+    text-align:left;
+    min-width:190px;
+}
+
+.tabla-indicador td:nth-child(n+2){
+    font-family:"IBM Plex Mono", monospace;
 }

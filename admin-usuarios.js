@@ -19,6 +19,11 @@ const NOMBRES_ROLES = {
     consulta: "Consulta"
 };
 
+function formatearDocumento(valor) {
+    const limpio = String(valor ?? "").replace(/[^0-9]/g, "");
+    return limpio ? Number(limpio).toLocaleString("es-CO") : (valor || "—");
+}
+
 let esSuperadmin = false;
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -52,6 +57,8 @@ async function cargarAdministradores() {
         return;
     }
 
+    cuerpo.innerHTML = `<tr><td colspan="7">Cargando administradores...</td></tr>`;
+
     try {
         const respuesta = await fetch(`${URL_SERVIDOR_LOCAL}/api/administradores`, {
             headers: { Authorization: `Bearer ${window.sesionAdmin.token}` }
@@ -62,11 +69,16 @@ async function cargarAdministradores() {
         const administradores = await respuesta.json();
         cuerpo.innerHTML = "";
 
+        if (administradores.length === 0) {
+            cuerpo.innerHTML = `<tr><td colspan="7">No hay administradores registrados todavía.</td></tr>`;
+            return;
+        }
+
         administradores.forEach((admin) => {
             const fila = document.createElement("tr");
             fila.innerHTML = `
                 <td>${admin.nombres} ${admin.apellidos}</td>
-                <td>${admin.documento}</td>
+                <td>${formatearDocumento(admin.documento)}</td>
                 <td>${admin.correo}</td>
                 <td>${NOMBRES_ROLES[admin.rol] || "—"}</td>
                 <td class="${admin.activo ? "estado-activo" : "estado-inactivo"}">
@@ -78,19 +90,21 @@ async function cargarAdministradores() {
                     <button data-accion="clave">Restablecer clave (correo)</button>
                     <button data-accion="claveTemporal">Nueva clave temporal</button>
                     <button data-accion="estado">${admin.activo ? "Desactivar" : "Activar"}</button>
+                    ${!admin.activo ? `<button data-accion="eliminar" class="btn-eliminar">Eliminar</button>` : ""}
                 </td>
             `;
             fila.querySelector('[data-accion="editar"]').addEventListener("click", () => abrirModal(admin));
             fila.querySelector('[data-accion="clave"]').addEventListener("click", () => restablecerClave(admin.correo));
             fila.querySelector('[data-accion="claveTemporal"]').addEventListener("click", () => generarNuevaClaveTemporal(admin));
             fila.querySelector('[data-accion="estado"]').addEventListener("click", () => alternarActivo(admin));
+            fila.querySelector('[data-accion="eliminar"]')?.addEventListener("click", () => eliminarAdmin(admin));
             cuerpo.appendChild(fila);
         });
 
     } catch (error) {
         cuerpo.innerHTML = `<tr><td colspan="7">
-            No se pudo conectar con el servidor local (server/index.js).
-            ¿Está corriendo con "npm start"? Detalle: ${error.message}
+            No se pudo conectar con el servidor de administración.
+            Verifica tu conexión a internet e inténtalo de nuevo. Detalle: ${error.message}
         </td></tr>`;
     }
 }
@@ -245,6 +259,31 @@ async function alternarActivo(admin) {
     if (!respuesta.ok) {
         const datos = await respuesta.json();
         alert(datos.error || "No se pudo cambiar el estado.");
+        return;
+    }
+
+    await cargarAdministradores();
+}
+
+async function eliminarAdmin(admin) {
+    const nombreCompleto = `${admin.nombres} ${admin.apellidos}`;
+
+    if (!confirm(
+        `¿Eliminar PERMANENTEMENTE a ${nombreCompleto}? Esta acción no se puede deshacer.`
+    )) return;
+
+    if (!confirm(
+        `Última confirmación: se borrará por completo el acceso y el perfil de ${nombreCompleto}. ¿Continuar?`
+    )) return;
+
+    const respuesta = await fetch(`${URL_SERVIDOR_LOCAL}/api/administradores/${admin.user_id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${window.sesionAdmin.token}` }
+    });
+
+    if (!respuesta.ok) {
+        const datos = await respuesta.json();
+        alert(datos.error || "No se pudo eliminar el administrador.");
         return;
     }
 
