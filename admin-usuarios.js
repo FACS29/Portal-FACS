@@ -84,7 +84,7 @@ async function cargarAdministradores() {
                 <td class="${admin.activo ? "estado-activo" : "estado-inactivo"}">
                     ${admin.activo ? "Activo" : "Inactivo"}
                 </td>
-                <td>${new Date(admin.creado_en).toLocaleDateString("es-CO")}</td>
+                <td>${new Date(admin.creado_en).toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" })}</td>
                 <td>
                     <button data-accion="editar">Editar</button>
                     <button data-accion="clave">Restablecer clave (correo)</button>

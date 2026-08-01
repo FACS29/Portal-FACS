@@ -105,7 +105,7 @@ function renderizar() {
                         ${c.documento_destino ? "Para " + formatearDocumento(c.documento_destino) : "Para todos"}
                     </span>
                 </span>
-                <span class="mensaje-fecha">${new Date(c.fecha_publicacion).toLocaleDateString("es-CO")}</span>
+                <span class="mensaje-fecha">${new Date(c.fecha_publicacion).toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
             </div>
             <p class="mensaje-texto">${c.mensaje}</p>
             <div class="mensaje-acciones">

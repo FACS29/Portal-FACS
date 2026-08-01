@@ -29,6 +29,19 @@ async function resolverCorreo(documento) {
     return data; // null si el documento no existe o esta inactivo
 }
 
+// Solo para "Olvide mi contraseña": a diferencia de resolverCorreo(),
+// esta version solo devuelve el correo si el documento pertenece a un
+// superadministrador. Los demas perfiles deben pedirle al
+// superadministrador una clave temporal en vez de recuperarla por correo.
+async function resolverCorreoParaRecuperacion(documento) {
+    const { data, error } = await clienteAuth.rpc("correo_recuperacion_clave", {
+        p_documento: documento
+    });
+
+    if (error) return null;
+    return data;
+}
+
 formLogin.addEventListener("submit", async function (evento) {
     evento.preventDefault();
 
@@ -77,13 +90,16 @@ btnRecuperar.addEventListener("click", async function () {
         return;
     }
 
-    const correo = await resolverCorreo(documento);
+    const correo = await resolverCorreoParaRecuperacion(documento);
 
-    // Mismo mensaje exista o no el documento, para no revelar cual
-    // de las dos cosas fallo.
+    // Mismo mensaje exista o no el documento (y tambien si existe pero
+    // no es superadministrador), para no revelar cual de esas cosas
+    // paso -- pero ahora orienta a los demas perfiles hacia el camino
+    // correcto: pedirle al superadministrador una clave temporal.
     if (!correo) {
         mostrarMensaje(
-            "Si el documento está registrado, te llegará un enlace de recuperación.",
+            "Si tu documento corresponde a un superadministrador, te llegará un enlace de recuperación. " +
+            "Los demás perfiles deben solicitar una clave temporal al superadministrador.",
             "exito"
         );
         return;
@@ -94,7 +110,17 @@ btnRecuperar.addEventListener("click", async function () {
     });
 
     if (error) {
-        mostrarMensaje("No fue posible enviar el correo de recuperación.", "error");
+        console.error("Error al enviar correo de recuperación:", error);
+
+        const esLimiteDeCorreos =
+            /rate limit/i.test(error.message) || error.status === 429;
+
+        mostrarMensaje(
+            esLimiteDeCorreos
+                ? "Se alcanzó el límite de correos que Supabase permite enviar por hora. Espera unos minutos y vuelve a intentarlo."
+                : "No fue posible enviar el correo de recuperación. Detalle: " + error.message,
+            "error"
+        );
         return;
     }
 

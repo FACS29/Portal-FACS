@@ -49,6 +49,9 @@
     font-size:13px;
     margin-top:10px;
 }
+.mensaje-error:empty{
+    display:none;
+}
 
 .texto-exito{
     color:#006633;
@@ -66,3 +69,19 @@
     text-decoration:none;
 }
 .volver:hover{ color:#006633; }
+
+body.oscuro .texto-buzon{ color:#B7C6BE; }
+
+body.oscuro #formMensaje label{ color:#E4EBE6; }
+
+body.oscuro #formMensaje textarea{
+    background:#14261D;
+    color:#E4EBE6;
+    border-color:#2A4A38;
+}
+
+body.oscuro .mensaje-error{ color:#FF8A75; }
+
+body.oscuro .texto-exito{ color:#8CF2B6; }
+
+body.oscuro .volver{ color:#7A9184; }
