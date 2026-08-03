@@ -58,6 +58,23 @@ function formatearFecha(f) {
     return `${d}/${m}/${a}`;
 }
 
+function generarLeyendaConPorcentaje(chart) {
+    const data = chart.data;
+    const valores = data.datasets[0].data;
+    const total = valores.reduce((s, v) => s + Number(v || 0), 0);
+
+    return data.labels.map((label, i) => {
+        const porcentaje = total ? ((Number(valores[i] || 0) / total) * 100).toFixed(0) : 0;
+        return {
+            text: `${label} (${porcentaje}%)`,
+            fillStyle: data.datasets[0].backgroundColor[i],
+            strokeStyle: data.datasets[0].backgroundColor[i],
+            hidden: false,
+            index: i
+        };
+    });
+}
+
 function formatearCuotas(pagadas, pactadas) {
     const formatearParte = (valor) => {
         const n = Number(valor || 0);
@@ -344,8 +361,17 @@ function recalcularYRenderizar(periodo) {
 
     const porcentajeRecuperado = desembolsado ? Math.min((recuperado / desembolsado) * 100, 100) : 0;
     document.getElementById("textoSaludCartera").textContent =
-        `De cada $100 prestados en el periodo, se han recuperado ${porcentajeRecuperado.toFixed(0)} pesos (neto de anulados).`;
+        `${porcentajeRecuperado.toFixed(0)}% recuperado — de cada $100 prestados en el periodo, se han recuperado ${porcentajeRecuperado.toFixed(0)} pesos (neto de anulados).`;
     setTimeout(() => { document.getElementById("barraSaludRelleno").style.width = porcentajeRecuperado + "%"; }, 150);
+
+    const saludPorEmpresa = {};
+    Object.keys(desembolsadoPorEmpresa).forEach((e) => {
+        const desemb = desembolsadoPorEmpresa[e] || 0;
+        const recup = recuperadoPorEmpresa[e] || 0;
+        const pct = desemb ? Math.min((recup / desemb) * 100, 100) : 0;
+        saludPorEmpresa[e] = `${pct.toFixed(0)}% (${formatearMoneda(recup)} de ${formatearMoneda(desemb)})`;
+    });
+    pintarDesglose("desgloseSaludCartera", saludPorEmpresa, (v) => v);
 
     // ---- Gráficas ----
     const fechasUnicas = [...new Set(capitalTodo.map((f) => f.fecha))].sort((a, b) => new Date(a) - new Date(b));
@@ -382,7 +408,10 @@ function recalcularYRenderizar(periodo) {
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: {
-                legend: { position: "bottom", labels: { font: { family: "IBM Plex Sans" } } },
+                legend: {
+                    position: "bottom",
+                    labels: { font: { family: "IBM Plex Sans" }, generateLabels: generarLeyendaConPorcentaje }
+                },
                 tooltip: { callbacks: { label: (ctx) => formatearMoneda(ctx.raw) } }
             }, cutout: "68%"
         }
@@ -405,7 +434,12 @@ function recalcularYRenderizar(periodo) {
         }]},
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: "bottom", labels: { font: { family: "IBM Plex Sans" } } } },
+            plugins: {
+                legend: {
+                    position: "bottom",
+                    labels: { font: { family: "IBM Plex Sans" }, generateLabels: generarLeyendaConPorcentaje }
+                }
+            },
             cutout: "68%"
         }
     });
@@ -421,7 +455,7 @@ function recalcularYRenderizar(periodo) {
         return {
             label: empresa, data: serie, borderColor: PALETA_EMPRESAS[empresa] || "#999",
             backgroundColor: (PALETA_EMPRESAS[empresa] || "#999") + "22",
-            fill: true, tension: 0.25, pointRadius: 0, borderWidth: 2
+            fill: false, tension: 0.25, pointRadius: 0, borderWidth: 2
         };
     });
 
@@ -431,7 +465,7 @@ function recalcularYRenderizar(periodo) {
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { position: "bottom", labels: { font: { family: "IBM Plex Sans" } } } },
-            scales: { y: { ticks: { callback: (v) => formatearMoneda(v) } } }
+            scales: { y: { beginAtZero: true, ticks: { callback: (v) => formatearMoneda(v) } } }
         }
     });
 
@@ -455,7 +489,7 @@ function recalcularYRenderizar(periodo) {
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { position: "bottom", labels: { font: { family: "IBM Plex Sans" } } } },
-            scales: { y: { ticks: { callback: (v) => formatearMoneda(v) } } }
+            scales: { y: { beginAtZero: true, ticks: { callback: (v) => formatearMoneda(v) } } }
         }
     });
 
@@ -505,7 +539,7 @@ function recalcularYRenderizar(periodo) {
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
-            scales: { y: { ticks: { callback: (v) => formatearMoneda(v) } } }
+            scales: { y: { beginAtZero: true, ticks: { callback: (v) => formatearMoneda(v) } } }
         }
     });
 
@@ -526,7 +560,8 @@ function recalcularYRenderizar(periodo) {
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
         }
     });
 

@@ -30,16 +30,23 @@ async function resolverCorreo(documento) {
 }
 
 // Solo para "Olvide mi contraseña": a diferencia de resolverCorreo(),
-// esta version solo devuelve el correo si el documento pertenece a un
-// superadministrador. Los demas perfiles deben pedirle al
-// superadministrador una clave temporal en vez de recuperarla por correo.
-async function resolverCorreoParaRecuperacion(documento) {
-    const { data, error } = await clienteAuth.rpc("correo_recuperacion_clave", {
+// esta version devuelve el correo Y el rol del documento (o null si no
+// existe / esta inactivo), para poder responder distinto segun el caso:
+// superadministrador -> se le envia el correo; cualquier otro rol -> se
+// le indica que pida clave temporal; no existe -> mensaje neutro.
+async function resolverPerfilParaRecuperacion(documento) {
+    const { data, error } = await clienteAuth.rpc("perfil_para_recuperacion", {
         p_documento: documento
     });
 
-    if (error) return null;
-    return data;
+    if (error) {
+        console.error("Error al consultar perfil_para_recuperacion:", error);
+        return null;
+    }
+
+    if (!data || data.length === 0) return null;
+
+    return data[0]; // { correo, rol }
 }
 
 formLogin.addEventListener("submit", async function (evento) {
@@ -90,22 +97,22 @@ btnRecuperar.addEventListener("click", async function () {
         return;
     }
 
-    const correo = await resolverCorreoParaRecuperacion(documento);
+    const perfil = await resolverPerfilParaRecuperacion(documento);
 
-    // Mismo mensaje exista o no el documento (y tambien si existe pero
-    // no es superadministrador), para no revelar cual de esas cosas
-    // paso -- pero ahora orienta a los demas perfiles hacia el camino
-    // correcto: pedirle al superadministrador una clave temporal.
-    if (!correo) {
+    if (!perfil) {
+        mostrarMensaje("No encontramos un perfil activo con ese número de documento.", "error");
+        return;
+    }
+
+    if (perfil.rol !== "superadministrador") {
         mostrarMensaje(
-            "Si tu documento corresponde a un superadministrador, te llegará un enlace de recuperación. " +
-            "Los demás perfiles deben solicitar una clave temporal al superadministrador.",
-            "exito"
+            "Este perfil no puede recuperar la clave por correo. Pide una clave temporal al Superadministrador.",
+            "error"
         );
         return;
     }
 
-    const { error } = await clienteAuth.auth.resetPasswordForEmail(correo, {
+    const { error } = await clienteAuth.auth.resetPasswordForEmail(perfil.correo, {
         redirectTo: new URL("set-password.html", window.location.href).href
     });
 
@@ -125,7 +132,7 @@ btnRecuperar.addEventListener("click", async function () {
     }
 
     mostrarMensaje(
-        "Si el documento está registrado, te llegará un enlace de recuperación.",
+        "Te enviamos un enlace de recuperación a tu correo registrado. Revisa tu bandeja de entrada.",
         "exito"
     );
 });
