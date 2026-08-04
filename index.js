@@ -79,17 +79,22 @@ app.get("/api/administradores", requiereSuperadmin, async (req, res) => {
     // consulta automatica. Se piden por separado y se cruzan aqui,
     // en memoria, por user_id.
 
-    const { data: administradores, error: errorAdmins } = await supabaseAdmin
-        .from("Administradores")
-        .select("user_id, documento, nombres, apellidos, correo, activo, creado_en, creado_por")
-        .order("creado_en", { ascending: true });
+    // "Administradores" y "Usuarios_Roles" no dependen entre sí -- se
+    // piden en paralelo en vez de uno tras otro.
+    const [
+        { data: administradores, error: errorAdmins },
+        { data: rolesAsignados, error: errorRoles }
+    ] = await Promise.all([
+        supabaseAdmin
+            .from("Administradores")
+            .select("user_id, documento, nombres, apellidos, correo, activo, creado_en, creado_por")
+            .order("creado_en", { ascending: true }),
+        supabaseAdmin
+            .from("Usuarios_Roles")
+            .select("user_id, Roles ( nombre )")
+    ]);
 
     if (errorAdmins) return res.status(500).json({ error: errorAdmins.message });
-
-    const { data: rolesAsignados, error: errorRoles } = await supabaseAdmin
-        .from("Usuarios_Roles")
-        .select("user_id, Roles ( nombre )");
-
     if (errorRoles) return res.status(500).json({ error: errorRoles.message });
 
     const rolPorUsuario = {};

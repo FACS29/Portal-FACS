@@ -184,7 +184,10 @@ function filtrarPorPeriodo(lista, campoFecha, periodo) {
 async function cargarDatos() {
     const clienteAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const [capitalRes, creditosRes, pagosRes, afiliadosRes] = await Promise.all([
+    // Las 5 consultas son independientes entre sí -- "Creditos_Anulados"
+    // antes se pedía después de las otras 4, agregando un viaje de red
+    // extra en cada carga sin necesidad. Ahora las 5 van en paralelo.
+    const [capitalRes, creditosRes, pagosRes, afiliadosRes, anuladosRes] = await Promise.all([
         clienteAuth.from("Capital_Semilla").select("fecha, empresa, valor").order("fecha"),
         clienteAuth.from("Creditos").select(
             "Codigo_Credito, Documento, Empresa, Vr_Real, Valor_Credito, " +
@@ -192,7 +195,10 @@ async function cargarDatos() {
             "Estado, Fecha_Credito, Fecha_Inicial, Fecha_Final"
         ),
         clienteAuth.from("Pagos").select("Codigo_Credito, Capital_Pagado, Interes_Pagado, Fecha"),
-        clienteAuth.from("Afiliados").select("Documento, Nombre, Afiliado, Fecha_Retiro_Sind")
+        clienteAuth.from("Afiliados").select("Documento, Nombre, Afiliado, Fecha_Retiro_Sind"),
+        clienteAuth.from("Creditos_Anulados").select(
+            `"Fecha", "Codigo_Credito", "Empresa", "Valor_Credito", "Capital_Devuelto", "Interes_Devuelto"`
+        )
     ]);
 
     if (capitalRes.error || creditosRes.error || pagosRes.error) {
@@ -202,12 +208,8 @@ async function cargarDatos() {
         throw new Error("fallo carga");
     }
 
-    // Creditos_Anulados aparte: si falla, el resto del dashboard igual
-    // se muestra (con los créditos anulados en cero), y se avisa.
-    const anuladosRes = await clienteAuth.from("Creditos_Anulados").select(
-        `"Fecha", "Codigo_Credito", "Empresa", "Valor_Credito", "Capital_Devuelto", "Interes_Devuelto"`
-    );
-
+    // Si Creditos_Anulados falla, el resto del dashboard igual se
+    // muestra (con los créditos anulados en cero), y se avisa.
     let anuladosDatos = [];
     if (anuladosRes.error) {
         console.error("Creditos_Anulados:", anuladosRes.error.message);

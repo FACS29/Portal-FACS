@@ -20,25 +20,16 @@ let creditoActual = null;
 
 async function cargarDatos() {
 
+    // ANTES: esta función traía la tabla Creditos COMPLETA (todos los
+    // créditos de todos los afiliados) en cada carga del portal público,
+    // solo para guardarla en "datosGlobal" -- una variable que ningún
+    // otro lugar del código llega a leer. Esa descarga solo crecerá con
+    // el tiempo y no aportaba nada visible; se elimina. Lo único que
+    // realmente se usa de aquí es la fecha de "última actualización".
+
     try {
 
- const [configuracion, creditos] = await Promise.all([
-
-    obtenerConfiguracion(),
-
-    fetch(
-
-        `${SUPABASE_URL}/rest/v1/Creditos`,
-
-        {
-
-            headers: HEADERS
-
-        }
-
-    ).then(r => r.json())
-
-]);
+        const configuracion = await obtenerConfiguracion();
 
         if (configuracion.length > 0) {
 
@@ -62,42 +53,6 @@ async function cargarDatos() {
             );
 
         }
-
-        datosGlobal = creditos.map(c => ({
-
-            ...c,
-
-            "Codigo Credito": c.Codigo_Credito,
-
-            "Fecha Inicial": formatearFecha(c.Fecha_Inicial),
-
-            "Fecha Final": formatearFecha(c.Fecha_Final),
-
-            "Valor Desembolsado": c.Valor_Desembolsado,
-
-            "Valor Credito": c.Valor_Credito,
-
-            "Cuotas Pactadas": c.Cuotas_Pactadas,
-
-            "Cuotas Pagadas": c.Cuotas_Pagadas,
-
-            "Porcentaje Amortizado": c.Porcentaje_Amortizado,
-
-            "Capital Pagado": c.Capital_Pagado,
-
-            "Interes Pagado": c.Interes_Pagado,
-
-            "Saldo Capital": c.Saldo_Capital,
-
-            "Porcentaje Interes": c.Porcentaje_Interes,
-
-            "Cuotas Re": c.Cuotas_Re,
-
-            "Ultimo Pago": formatearFecha(c.Ultimo_Pago),
-
-            "Proximo Pago": formatearFecha(c.Proximo_Pago)
-
-        }));
 
     } catch (error) {
 
@@ -589,23 +544,26 @@ btnConsultar.textContent = "Consultando...";
 
 try {
 
-const ultimaConsulta = await obtenerUltimaConsulta(
-    documento
-);
+// "ultimaConsulta" y "Creditos" no dependen entre sí -- se piden en
+// paralelo en vez de uno tras otro, para que la consulta responda en
+// el tiempo del más lento de los dos, no en la suma de ambos.
+const [ultimaConsulta, registrosBD] = await Promise.all([
 
-const respuesta = await fetch(
+    obtenerUltimaConsulta(documento),
 
-    `${SUPABASE_URL}/rest/v1/Creditos?Documento=eq.${documento}`,
+    fetch(
 
-    {
+        `${SUPABASE_URL}/rest/v1/Creditos?Documento=eq.${documento}`,
 
-        headers: HEADERS
+        {
 
-    }
+            headers: HEADERS
 
-);
+        }
 
-const registrosBD = await respuesta.json();
+    ).then(r => r.json())
+
+]);
 
 let nombreAfiliado = "";
 let fechaRetiroSind = "";

@@ -20,11 +20,25 @@ async function requerirSesion() {
         return null;
     }
 
-    const { data: perfil, error: errorPerfil } = await clienteAuth
-        .from("Administradores")
-        .select("nombres, apellidos, correo, activo, debe_cambiar_clave")
-        .eq("user_id", session.user.id)
-        .single();
+    // "Administradores" (perfil) y "Usuarios_Roles" (rol) dependen
+    // ambas de session.user.id, pero no una de la otra -- se piden
+    // en paralelo. Esto corre en cada página del panel, así que es
+    // el punto de la app donde más veces se repite el ahorro.
+    const [
+        { data: perfil, error: errorPerfil },
+        { data: rolFila }
+    ] = await Promise.all([
+        clienteAuth
+            .from("Administradores")
+            .select("nombres, apellidos, correo, activo, debe_cambiar_clave")
+            .eq("user_id", session.user.id)
+            .single(),
+        clienteAuth
+            .from("Usuarios_Roles")
+            .select("Roles(nombre)")
+            .eq("user_id", session.user.id)
+            .maybeSingle()
+    ]);
 
     if (errorPerfil || !perfil || perfil.activo === false) {
         await clienteAuth.auth.signOut();
@@ -38,12 +52,6 @@ async function requerirSesion() {
         window.location.href = "set-password.html";
         return null;
     }
-
-    const { data: rolFila } = await clienteAuth
-        .from("Usuarios_Roles")
-        .select("Roles(nombre)")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
 
     window.sesionAdmin = {
         token: session.access_token,

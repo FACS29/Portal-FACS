@@ -26,8 +26,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     esSuperadmin = sesion.rol === "superadministrador";
 
-    await cargarComunicados();
-    await cargarAfiliadosParaBuscar();
+    // Ambas cargas son independientes -- van en paralelo en vez de
+    // esperar una y luego la otra.
+    await Promise.all([cargarComunicados(), cargarAfiliadosParaBuscar()]);
     renderizar();
 
     document.getElementById("btnNuevoComunicado").addEventListener("click", () => abrirModal());

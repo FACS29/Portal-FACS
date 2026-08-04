@@ -71,10 +71,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 async function cargarMovimientos() {
     const clienteAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const [capitalRes, creditosRes, pagosRes] = await Promise.all([
+    const [capitalRes, creditosRes, pagosRes, anuladosRes] = await Promise.all([
         clienteAuth.from("Capital_Semilla").select("fecha, empresa, valor"),
         clienteAuth.from("Creditos").select("Codigo_Credito, Empresa, Vr_Real, Fecha_Credito"),
-        clienteAuth.from("Pagos").select("Codigo_Credito, Capital_Pagado, Interes_Pagado, Fecha")
+        clienteAuth.from("Pagos").select("Codigo_Credito, Capital_Pagado, Interes_Pagado, Fecha"),
+        clienteAuth.from("Creditos_Anulados").select(
+            `"Fecha", "Codigo_Credito", "Empresa", "Valor_Credito", "Capital_Devuelto", "Interes_Devuelto"`
+        )
     ]);
 
     if (capitalRes.error || creditosRes.error || pagosRes.error) {
@@ -104,10 +107,6 @@ async function cargarMovimientos() {
     }));
 
     movimientosCompletos = [...aportes, ...desembolsos, ...pagos].filter((m) => m.fecha);
-
-    const anuladosRes = await clienteAuth.from("Creditos_Anulados").select(
-        `"Fecha", "Codigo_Credito", "Empresa", "Valor_Credito", "Capital_Devuelto", "Interes_Devuelto"`
-    );
 
     if (anuladosRes.error) {
         console.error("Creditos_Anulados:", anuladosRes.error.message);

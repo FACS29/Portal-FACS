@@ -39,13 +39,7 @@ async function resolverPerfilParaRecuperacion(documento) {
         p_documento: documento
     });
 
-    if (error) {
-        console.error("Error al consultar perfil_para_recuperacion:", error);
-        return null;
-    }
-
-    if (!data || data.length === 0) return null;
-
+    if (error || !data || data.length === 0) return null;
     return data[0]; // { correo, rol }
 }
 
