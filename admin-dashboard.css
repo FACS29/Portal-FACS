@@ -226,6 +226,28 @@
     .grid-2{ grid-template-columns:1fr; }
 }
 
+@media (max-width: 480px){
+    .hero-financiero{ padding:22px 20px; }
+    .hero-texto{ width:100%; min-width:0; }
+    .hero-cifra{ font-size:30px; word-break:break-word; }
+    .hero-delta{ font-size:12px; }
+
+    /* En pantallas chicas, la empresa y su valor quedaban muy
+       separados porque la fila se estiraba a todo el ancho
+       disponible con space-between. Se juntan con un gap fijo
+       en vez de repartirse a los extremos. */
+    .hero-desglose .fila-desglose,
+    .kpi-desglose .fila-desglose{
+        justify-content:flex-start;
+        gap:10px;
+        flex-wrap:wrap;
+    }
+    .hero-desglose .fila-desglose .etiqueta-empresa,
+    .kpi-desglose .fila-desglose .etiqueta-empresa{
+        flex-shrink:0;
+    }
+}
+
 .tabla-scroll-panel{
     overflow-x:auto;
     border-radius:14px;

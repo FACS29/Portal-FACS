@@ -396,7 +396,7 @@ function recalcularYRenderizar(periodo) {
     // el desglose por empresa -- así se lee igual que los demás
     // indicadores que muestran total + desglose.
     document.getElementById("saludCarteraGeneral").innerHTML =
-        `<b>General: ${porcentajeRecuperado.toFixed(0)}% (${formatearMoneda(recuperado)} / ${formatearMoneda(desembolsado)})</b>`;
+        `<b>${porcentajeRecuperado.toFixed(0)}% (${formatearMoneda(recuperado)} / ${formatearMoneda(desembolsado)})</b>`;
 
     const saludPorEmpresa = {};
     Object.keys(desembolsadoPorEmpresa).forEach((e) => {
