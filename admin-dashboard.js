@@ -9,7 +9,9 @@
   Capital recuperado   = suma de Pagos.Capital_Pagado (TODOS los pagos,
                           incluidos los de créditos hoy anulados) MENOS
                           Creditos_Anulados.Capital_Devuelto (lo que se
-                          le devolvió al deudor al anular).
+                          le devolvió al deudor al anular) MAS
+                          Creditos_Anulados.Valor_Credito (el valor del
+                          crédito que vuelve al Fondo al anularlo).
   Intereses generados  = mismo criterio, con Interes_Pagado /
                           Interes_Devuelto.
   Dinero prestado (hoy) = suma de Saldo_Capital de créditos
@@ -27,6 +29,30 @@
   se usaron los nombres tal como los describiste: Fecha, Código,
   Empresa, Valor_crédito, Cápital_Devuelto, Interés_Devuelto.
 */
+
+// Supabase solo entrega 1000 filas por consulta por defecto -- sin
+// avisar, simplemente corta ahí. Para tablas que pueden crecer más
+// de 1000 filas (Pagos, Creditos) hay que pedirlas por páginas hasta
+// traerlas todas. Se ordena por "id" para que la paginación sea
+// estable (sin orden, Postgres no garantiza el mismo resultado entre
+// una página y la siguiente).
+async function traerTodasLasFilas(cliente, tabla, columnas) {
+    const TAMANO_PAGINA = 1000;
+    let desde = 0;
+    let todas = [];
+    while (true) {
+        const { data, error } = await cliente
+            .from(tabla)
+            .select(columnas)
+            .order("id", { ascending: true })
+            .range(desde, desde + TAMANO_PAGINA - 1);
+        if (error) return { data: null, error };
+        todas = todas.concat(data || []);
+        if (!data || data.length < TAMANO_PAGINA) break;
+        desde += TAMANO_PAGINA;
+    }
+    return { data: todas, error: null };
+}
 
 const formateadorCOP = new Intl.NumberFormat("es-CO", {
     style: "currency", currency: "COP", maximumFractionDigits: 0
@@ -189,13 +215,13 @@ async function cargarDatos() {
     // extra en cada carga sin necesidad. Ahora las 5 van en paralelo.
     const [capitalRes, creditosRes, pagosRes, afiliadosRes, anuladosRes] = await Promise.all([
         clienteAuth.from("Capital_Semilla").select("fecha, empresa, valor").order("fecha"),
-        clienteAuth.from("Creditos").select(
+        traerTodasLasFilas(clienteAuth, "Creditos",
             "Codigo_Credito, Documento, Empresa, Vr_Real, Valor_Credito, " +
             "Saldo_Capital, Capital_Pagado, Cuotas_Pactadas, Cuotas_Pagadas, " +
             "Estado, Fecha_Credito, Fecha_Inicial, Fecha_Final"
         ),
-        clienteAuth.from("Pagos").select("Codigo_Credito, Capital_Pagado, Interes_Pagado, Fecha"),
-        clienteAuth.from("Afiliados").select("Documento, Nombre, Afiliado, Fecha_Retiro_Sind"),
+        traerTodasLasFilas(clienteAuth, "Pagos", "Codigo_Credito, Capital_Pagado, Interes_Pagado, Fecha"),
+        traerTodasLasFilas(clienteAuth, "Afiliados", "Documento, Nombre, Afiliado, Fecha_Retiro_Sind"),
         clienteAuth.from("Creditos_Anulados").select(
             `"Fecha", "Codigo_Credito", "Empresa", "Valor_Credito", "Capital_Devuelto", "Interes_Devuelto"`
         )

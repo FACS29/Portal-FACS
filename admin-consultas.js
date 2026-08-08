@@ -55,10 +55,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 });
 
+async function traerTodasLasFilas(cliente, tabla, columnas, ordenarPor, ascendente) {
+    const TAMANO_PAGINA = 1000;
+    let desde = 0;
+    let todas = [];
+    while (true) {
+        const { data, error } = await cliente
+            .from(tabla)
+            .select(columnas)
+            .order(ordenarPor || "id", { ascending: ascendente !== false })
+            .range(desde, desde + TAMANO_PAGINA - 1);
+        if (error) return { data: null, error };
+        todas = todas.concat(data || []);
+        if (!data || data.length < TAMANO_PAGINA) break;
+        desde += TAMANO_PAGINA;
+    }
+    return { data: todas, error: null };
+}
+
 async function cargarDatos() {
     const [afiliadosRes, consultasRes] = await Promise.all([
-        clienteAuth.from("Afiliados").select("Documento, Nombre"),
-        clienteAuth.from("Consultas_Portal").select("*").order("Fecha_Consulta", { ascending: false })
+        traerTodasLasFilas(clienteAuth, "Afiliados", "Documento, Nombre"),
+        traerTodasLasFilas(clienteAuth, "Consultas_Portal", "*", "Fecha_Consulta", false)
     ]);
 
     if (consultasRes.error) {

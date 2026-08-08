@@ -19,6 +19,27 @@ const formateadorCOP = new Intl.NumberFormat("es-CO", {
 });
 function formatearMoneda(v) { return formateadorCOP.format(v || 0); }
 
+// Supabase solo entrega 1000 filas por consulta por defecto -- sin
+// avisar, simplemente corta ahí. Se pagina para traer la tabla
+// completa (ver mismo helper en admin-dashboard.js).
+async function traerTodasLasFilas(cliente, tabla, columnas) {
+    const TAMANO_PAGINA = 1000;
+    let desde = 0;
+    let todas = [];
+    while (true) {
+        const { data, error } = await cliente
+            .from(tabla)
+            .select(columnas)
+            .order("id", { ascending: true })
+            .range(desde, desde + TAMANO_PAGINA - 1);
+        if (error) return { data: null, error };
+        todas = todas.concat(data || []);
+        if (!data || data.length < TAMANO_PAGINA) break;
+        desde += TAMANO_PAGINA;
+    }
+    return { data: todas, error: null };
+}
+
 function normalizarFecha(valor) {
     if (!valor) return null;
     return String(valor).slice(0, 10); // siempre "YYYY-MM-DD", sin hora/zona
@@ -73,8 +94,8 @@ async function cargarMovimientos() {
 
     const [capitalRes, creditosRes, pagosRes, anuladosRes] = await Promise.all([
         clienteAuth.from("Capital_Semilla").select("fecha, empresa, valor"),
-        clienteAuth.from("Creditos").select("Codigo_Credito, Empresa, Vr_Real, Fecha_Credito"),
-        clienteAuth.from("Pagos").select("Codigo_Credito, Capital_Pagado, Interes_Pagado, Fecha"),
+        traerTodasLasFilas(clienteAuth, "Creditos", "Codigo_Credito, Empresa, Vr_Real, Fecha_Credito"),
+        traerTodasLasFilas(clienteAuth, "Pagos", "Codigo_Credito, Capital_Pagado, Interes_Pagado, Fecha"),
         clienteAuth.from("Creditos_Anulados").select(
             `"Fecha", "Codigo_Credito", "Empresa", "Valor_Credito", "Capital_Devuelto", "Interes_Devuelto"`
         )

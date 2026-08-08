@@ -70,13 +70,31 @@ function normalizarDocumento(valor) {
     return String(valor ?? "").replace(/[^0-9]/g, "");
 }
 
+async function traerTodasLasFilas(cliente, tabla, columnas) {
+    const TAMANO_PAGINA = 1000;
+    let desde = 0;
+    let todas = [];
+    while (true) {
+        const { data, error } = await cliente
+            .from(tabla)
+            .select(columnas)
+            .order("id", { ascending: true })
+            .range(desde, desde + TAMANO_PAGINA - 1);
+        if (error) return { data: null, error };
+        todas = todas.concat(data || []);
+        if (!data || data.length < TAMANO_PAGINA) break;
+        desde += TAMANO_PAGINA;
+    }
+    return { data: todas, error: null };
+}
+
 async function cargarDatos() {
     const clienteAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const [afiliadosRes, creditosRes, pagosRes] = await Promise.all([
-        clienteAuth.from("Afiliados").select("Documento, Nombre"),
-        clienteAuth.from("Creditos").select("*"),
-        clienteAuth.from("Pagos").select("*")
+        traerTodasLasFilas(clienteAuth, "Afiliados", "Documento, Nombre"),
+        traerTodasLasFilas(clienteAuth, "Creditos", "*"),
+        traerTodasLasFilas(clienteAuth, "Pagos", "*")
     ]);
 
     if (afiliadosRes.error || creditosRes.error || pagosRes.error) {
