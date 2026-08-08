@@ -131,7 +131,8 @@
                 <span><i class="punto punto-verde"></i> Recuperado</span>
                 <span><i class="punto punto-claro"></i> Cartera vigente</span>
             </div>
-            <div id="desgloseSaludCartera" class="kpi-desglose" style="margin-top:14px;"></div>
+            <div class="item-desglose" id="saludCarteraGeneral" style="margin-top:14px;font-size:15px"></div>
+            <div id="desgloseSaludCartera" class="kpi-desglose" style="margin-top:4px;"></div>
         </section>
 
         <!-- Grid de graficas -->
@@ -175,12 +176,16 @@
 
         <section class="fila-kpi">
             <div class="kpi">
-                <span class="kpi-etiqueta">Rentabilidad (intereses / capital semilla)</span>
+                <span class="kpi-etiqueta" title="Cuántos pesos de interés ha generado el Fondo por cada peso de capital semilla aportado por los afiliados.">Rentabilidad (intereses / capital semilla)</span>
                 <span class="kpi-valor" id="kpiRentabilidad">—</span>
             </div>
             <div class="kpi">
-                <span class="kpi-etiqueta">Rotación de cartera (histórica)</span>
+                <span class="kpi-etiqueta" title="Cuántas veces ha vuelto el capital semilla en forma de pagos. Mide lo que ya REGRESÓ al Fondo, no lo que salió a préstamo.">Rotación de cartera (histórica)</span>
                 <span class="kpi-valor" id="kpiRotacion">—</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi-etiqueta" title="Cuántas veces se ha vuelto a prestar el capital semilla en total (desembolsado histórico / capital semilla). Mide lo que ha SALIDO a préstamo, incluyendo lo represtado -- siempre es mayor o igual a la Rotación, porque el dinero sale de nuevo antes de completar el ciclo de regreso.">Veces prestado (desembolsado / capital semilla)</span>
+                <span class="kpi-valor" id="kpiVecesPrestado">—</span>
             </div>
             <div class="kpi">
                 <span class="kpi-etiqueta">Afiliados activos</span>
@@ -191,6 +196,13 @@
                 <span class="kpi-valor" id="kpiAfiliadosRetirados">—</span>
             </div>
         </section>
+
+        <p class="texto-plano" style="margin-top:-8px">
+            <strong>Rotación</strong> mide cuánto ha vuelto el capital al Fondo (pagos recibidos).
+            <strong>Veces prestado</strong> mide cuánto ha salido a préstamo en total. El segundo va
+            siempre un paso adelante del primero: cada peso que regresa se vuelve a prestar antes
+            de completar su propio ciclo de retorno.
+        </p>
 
         <section class="grid-2">
             <div class="tarjeta-panel">

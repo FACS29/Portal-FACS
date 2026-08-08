@@ -392,12 +392,18 @@ function recalcularYRenderizar(periodo) {
         `${porcentajeRecuperado.toFixed(0)}% recuperado — de cada $100 prestados en el periodo, se han recuperado ${porcentajeRecuperado.toFixed(0)} pesos (neto de anulados).`;
     setTimeout(() => { document.getElementById("barraSaludRelleno").style.width = porcentajeRecuperado + "%"; }, 150);
 
+    // Valor general (las 3 empresas juntas), en el mismo formato que
+    // el desglose por empresa -- así se lee igual que los demás
+    // indicadores que muestran total + desglose.
+    document.getElementById("saludCarteraGeneral").innerHTML =
+        `<b>General: ${porcentajeRecuperado.toFixed(0)}% (${formatearMoneda(recuperado)} / ${formatearMoneda(desembolsado)})</b>`;
+
     const saludPorEmpresa = {};
     Object.keys(desembolsadoPorEmpresa).forEach((e) => {
         const desemb = desembolsadoPorEmpresa[e] || 0;
         const recup = recuperadoPorEmpresa[e] || 0;
         const pct = desemb ? Math.min((recup / desemb) * 100, 100) : 0;
-        saludPorEmpresa[e] = `${pct.toFixed(0)}% (${formatearMoneda(recup)} de ${formatearMoneda(desemb)})`;
+        saludPorEmpresa[e] = `${pct.toFixed(0)}% (${formatearMoneda(recup)} / ${formatearMoneda(desemb)})`;
     });
     pintarDesglose("desgloseSaludCartera", saludPorEmpresa, (v) => v);
 
@@ -536,6 +542,15 @@ function recalcularYRenderizar(periodo) {
     const recuperadoHistoricoTotal = pagosTodo.reduce((s, p) => s + Number(p.Capital_Pagado || 0), 0);
     const rotacion = capitalTotalHoy ? recuperadoHistoricoTotal / capitalTotalHoy : 0;
     document.getElementById("kpiRotacion").textContent = rotacion.toFixed(2) + "x";
+
+    // Veces prestado: cuántas veces se ha vuelto a prestar el capital
+    // semilla en total (desembolsado histórico, sin filtrar por
+    // periodo -- todos los créditos desde el inicio del Fondo).
+    // Siempre >= Rotación, porque el capital que vuelve se vuelve a
+    // prestar antes de completar su propio ciclo de regreso.
+    const desembolsadoHistoricoTotal = creditosTodo.reduce((s, c) => s + Number(c.Vr_Real || 0), 0);
+    const vecesPrestado = capitalTotalHoy ? desembolsadoHistoricoTotal / capitalTotalHoy : 0;
+    document.getElementById("kpiVecesPrestado").textContent = vecesPrestado.toFixed(2) + "x";
 
     // Afiliados activos vs retirados
     const activos = afiliadosTodo.filter((a) => !a.Fecha_Retiro_Sind).length;
