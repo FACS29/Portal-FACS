@@ -1257,7 +1257,42 @@ function construirTablaAmortizacion(
 
     const diaPago = vigente.Empresa === "ELG" ? 25 : 30;
 
-    let cuotasExtra = 0;
+    // Determina si un pago concreto fue parcial (mismo criterio que se
+    // usaba adentro del bucle, ahora también se necesita ANTES de
+    // empezar a recorrer el cronograma, para saber cuántas filas extra
+    // hacen falta en total).
+    function esPagoParcial(pago) {
+
+        const valorPagado = Number(pago.Valor_Cuota || 0);
+
+        let cuotaEsperada = Number(vigente.Cuota || 0);
+
+        if (vigente.Afiliado === "No" && Number(vigente["Cuota Original"] || 0) > 0) {
+
+            const cuotaOriginal = Number(vigente["Cuota Original"]);
+            const cuotaActual = Number(vigente.Cuota);
+            const diferenciaOriginal = Math.abs(valorPagado - cuotaOriginal);
+            const diferenciaActual = Math.abs(valorPagado - cuotaActual);
+
+            cuotaEsperada = diferenciaOriginal <= diferenciaActual ? cuotaOriginal : cuotaActual;
+
+        }
+
+        return valorPagado < cuotaEsperada;
+
+    }
+
+    // Los pagos parciales corresponden a quincenas -- se emparejan de a
+    // dos (sin importar el orden ni si están seguidos) porque dos
+    // parciales juntos ya completan una cuota normal y no necesitan
+    // fila extra propia. Solo cuando el total de parciales es IMPAR
+    // sobra una quincena suelta, y esa es la que agrega 1 fila extra al
+    // final del cronograma, cerrando en día 15 en vez del día normal.
+    const totalParciales = pagos.filter(esPagoParcial).length;
+    const extraPorParciales = Math.ceil(totalParciales / 2);
+    const cierraEnQuince = totalParciales % 2 === 1;
+
+    let cuotasExtra = extraPorParciales;
     let mesesGraciaCompleta = 0;
     let mesesPagoParcial = 0;
     let totalCapital = 0;
@@ -1275,6 +1310,12 @@ function construirTablaAmortizacion(
 
     let detenerDespuesDeEstaFila = false;
 
+    // Las filas se arman en memoria primero (no directo a HTML) porque
+    // solo al terminar el bucle se sabe cuál termina siendo la ÚLTIMA
+    // fila real -- y es únicamente esa última fila la que debe caer en
+    // día 15 (ver "cierraEnQuince" arriba).
+    const filas = [];
+
     while (
 
     numeroCuota <= cuotasPactadas + cuotasExtra
@@ -1291,13 +1332,18 @@ function construirTablaAmortizacion(
 
      detenerDespuesDeEstaFila = false;
 
-    const fechaCuota = new Date(fechaInicio);
+    // Antes esto hacía setMonth() y luego setDate(diaPago) por
+    // separado -- si el mes resultante no tiene ese día (ej. febrero
+    // no tiene 30), el 30 "desbordaba" hacia el mes siguiente ANTES de
+    // que setDate volviera a fijar el día, saltándose un mes entero.
+    // Se arma la fecha directo en el día 1 del mes destino (siempre
+    // válido) y se recorta el día al último día real de ese mes si
+    // diaPago no le cabe.
+    const mesObjetivo = fechaInicio.getMonth() + (numeroCuota - 1);
+    const fechaCuota = new Date(fechaInicio.getFullYear(), mesObjetivo, 1);
+    const ultimoDiaDelMes = new Date(fechaCuota.getFullYear(), fechaCuota.getMonth() + 1, 0).getDate();
 
-    fechaCuota.setMonth(
-        fechaInicio.getMonth() + (numeroCuota - 1)
-    );
-
-    fechaCuota.setDate(diaPago);
+    fechaCuota.setDate(Math.min(diaPago, ultimoDiaDelMes));
 
     const pago = pagos.find(p => {
 
@@ -1317,59 +1363,10 @@ if (pago) {
 
     totalCuota += Number(pago.Valor_Cuota || 0);
 
-    const valorPagado = Number(pago.Valor_Cuota || 0);
-
-let cuotaEsperada = Number(vigente.Cuota || 0);
-
-if (
-
-    vigente.Afiliado === "No"
-
-    &&
-
-    Number(vigente["Cuota Original"] || 0) > 0
-
-) {
-
-    const cuotaOriginal = Number(
-
-        vigente["Cuota Original"]
-
-    );
-
-    const cuotaActual = Number(
-
-        vigente.Cuota
-
-    );
-
-    const diferenciaOriginal = Math.abs(
-
-        valorPagado - cuotaOriginal
-
-    );
-
-    const diferenciaActual = Math.abs(
-
-        valorPagado - cuotaActual
-
-    );
-
-    cuotaEsperada =
-
-        diferenciaOriginal <= diferenciaActual
-
-            ? cuotaOriginal
-
-            : cuotaActual;
-
-}
-    
-    if (valorPagado < cuotaEsperada) {
+    if (esPagoParcial(pago)) {
 
     estado = "🟡 Pago Parcial";
 
-    cuotasExtra++;
     mesesPagoParcial++;
 
     } else {
@@ -1429,6 +1426,40 @@ const yaPaso =
     
 }
 
+    filas.push({ numeroCuota, fechaCuota, pago, estado });
+
+    if (detenerDespuesDeEstaFila) {
+
+    finalizarCronograma = true;
+
+    }
+
+    numeroCuota++;
+
+}
+
+// Si el cronograma se amplió (hay más filas que cuotas pactadas) y la
+// última fila es una proyección sin pago real todavía registrado, esa
+// última fila cierra en día 15 solo cuando el total de pagos parciales
+// es impar (queda una quincena suelta sin pareja). Si es par (todos los
+// parciales se emparejaron) o si la ampliación vino de tiempos de
+// gracia, la fila de cierre se deja en el día normal (25 o 30).
+if (filas.length > 0) {
+
+    const ultima = filas[filas.length - 1];
+
+    const seAmplioElCronograma = ultima.numeroCuota > cuotasPactadas;
+
+    if (seAmplioElCronograma && !ultima.pago && cierraEnQuince) {
+
+        ultima.fechaCuota.setDate(15);
+
+    }
+
+}
+
+filas.forEach(({ numeroCuota, fechaCuota, pago, estado }) => {
+
     html += `
 
         <tr>
@@ -1457,15 +1488,7 @@ const yaPaso =
 
     `;
 
-    if (detenerDespuesDeEstaFila) {
-
-    finalizarCronograma = true;
-
-    }
-
-    numeroCuota++;
-
-}
+});
 
 html += `
 
