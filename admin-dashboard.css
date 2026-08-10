@@ -293,3 +293,13 @@
 .tabla-indicador td:nth-child(n+2){
     font-family:"IBM Plex Mono", monospace;
 }
+
+/* La tabla de aportes de capital usa fechas cortas en la primera
+   columna, no nombres largos como el resto de tablas del panel --
+   el min-width:190px genérico de arriba la dejaba con un espacio
+   de sobra que empujaba "Empresa" muy lejos de la fecha. */
+#tablaAportesCapital th:first-child,
+#tablaAportesCapital td:first-child{
+    min-width:auto;
+    width:110px;
+}
