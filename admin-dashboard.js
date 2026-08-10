@@ -503,6 +503,33 @@ function recalcularYRenderizar(periodo) {
         }
     });
 
+    // Tabla de aportes: un renglón por cada aporte real (no por fecha
+    // única), en orden cronológico, con el acumulado corrido del
+    // Fondo -- la gráfica de línea muestra la tendencia, esta tabla
+    // muestra el dato exacto que preguntan los compañeros.
+    const aportesOrdenados = [...capitalTodo].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    let acumuladoFondo = 0;
+    const acumuladoPorEmpresa = {};
+    const cuerpoAportes = document.getElementById("tablaAportesCapitalBody");
+    if (cuerpoAportes) {
+        cuerpoAportes.innerHTML = aportesOrdenados.length
+            ? aportesOrdenados.map((a) => {
+                acumuladoFondo += Number(a.valor || 0);
+                acumuladoPorEmpresa[a.empresa] = (acumuladoPorEmpresa[a.empresa] || 0) + Number(a.valor || 0);
+                const color = PALETA_EMPRESAS[a.empresa] || "#999";
+                return `
+                <tr>
+                    <td>${formatearFechaCorta(a.fecha)}</td>
+                    <td><span class="punto-empresa" style="background:${color}"></span>${a.empresa}</td>
+                    <td>${formatearMoneda(a.valor)}</td>
+                    <td>${formatearMoneda(acumuladoPorEmpresa[a.empresa])}</td>
+                    <td><b>${formatearMoneda(acumuladoFondo)}</b></td>
+                </tr>
+            `;
+            }).join("")
+            : `<tr><td colspan="5">Aún no hay aportes de capital semilla registrados.</td></tr>`;
+    }
+
     const porEmpresaCreditos = {};
     Object.keys(desembolsadoPorEmpresa).forEach((e) => {
         porEmpresaCreditos[e] = { desembolsado: desembolsadoPorEmpresa[e] || 0, recuperado: recuperadoPorEmpresa[e] || 0 };
