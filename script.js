@@ -223,7 +223,41 @@ function mostrarBusqueda() {
 
     document.getElementById("pantallaInicio").style.display = "block";
 
+    // LIMPIAR TODOS LOS CAMPOS
     document.getElementById("documento").value = "";
+    
+    const inputContrasena = document.getElementById("contrasena");
+    if (inputContrasena) {
+        inputContrasena.value = '';
+        inputContrasena.style.display = 'none';
+    }
+    
+    // Limpiar errores
+    const errorConsulta = document.getElementById('errorConsulta');
+    if (errorConsulta) {
+        errorConsulta.innerHTML = '';
+        errorConsulta.style.display = 'none';
+    }
+    
+    // Limpiar enlace de recuperación
+    const linkRecuperacion = document.getElementById('linkRecuperacion');
+    if (linkRecuperacion) {
+        linkRecuperacion.style.display = 'none';
+    }
+    
+    // Cerrar todos los modales
+    const modales = ['modalPrimeraConfiguracion', 'modalRecuperacion', 'modalSolicitarReset'];
+    modales.forEach(id => {
+        const modal = document.getElementById(id);
+        if (modal) modal.style.display = 'none';
+    });
+    
+    // Resetear variables de autenticación
+    documentoActual = null;
+    intentosFallidos = 0;
+    intentosFallidosRecuperacion = 0;
+    esConsultaInterna = false;
+    autenticacionCompleta = false;
 
     document.getElementById("documento").focus();
 
@@ -519,7 +553,446 @@ function construirFechasCredito(vigente, mesesGracia) {
 
 }
 
+// ======================================================
+// VARIABLES Y FUNCIONES DE AUTENTICACIÓN
+// ======================================================
+
+let documentoActual = null;
+let intentosFallidos = 0;
+const MAX_INTENTOS = 3;
+let intentosFallidosRecuperacion = 0;
+const MAX_INTENTOS_RECUPERACION = 2;
+let esConsultaInterna = false;
+let autenticacionCompleta = false;
+
+const PREGUNTAS_SECRETAS = {
+    1: "¿Cómo se llamaba tu mejor amigo o amiga de la infancia?",
+    2: "¿Cómo se llamaba tu profesor o profesora favorito del colegio?",
+    3: "¿Qué apodo te daban de niño?",
+    4: "¿Cuál era el nombre de tu primera mascota?",
+    5: "¿Cuál es el nombre de tu primer colegio?",
+    6: "¿En qué pueblo naciste?"
+};
+
+// Devuelve null si el documento no existe, o { tiene_clave, pregunta_secreta_id }.
+// Ya NO descarga la fila del afiliado: los hashes no se exponen al navegador.
+async function verificarAfiliadoExiste(documento) {
+    try {
+        const respuesta = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/estado_afiliado`,
+            {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify({ p_documento: documento })
+            }
+        );
+
+        if (!respuesta.ok) return null;
+
+        const datos = await respuesta.json();
+        return datos || null;
+    } catch (error) {
+        console.error('Error al verificar afiliado:', error);
+        return null;
+    }
+}
+
+// Verificación con conteo y bloqueo de intentos (todo en Supabase):
+// devuelve { ok, bloqueado, segundos_restantes, intentos } o { error: true }.
+async function verificarAccesoAfiliado(documento, contrasena) {
+    try {
+        const respuesta = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/verificar_acceso_afiliado`,
+            {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify({
+                    p_documento: documento,
+                    p_contrasena: contrasena
+                })
+            }
+        );
+
+        if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
+        return await respuesta.json();
+    } catch (error) {
+        console.error('Error al verificar acceso del afiliado:', error);
+        return { ok: false, bloqueado: false, segundos_restantes: 0, intentos: 0, error: true };
+    }
+}
+
+// Segundos que le faltan a un documento bloqueado (0 = libre).
+async function consultarBloqueoAfiliado(documento) {
+    try {
+        const respuesta = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/estado_bloqueo_afiliado`,
+            {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify({ p_documento: documento })
+            }
+        );
+
+        if (!respuesta.ok) return 0;
+        const segundos = await respuesta.json();
+        return Number(segundos) || 0;
+    } catch (error) {
+        console.error('Error al consultar bloqueo:', error);
+        return 0;
+    }
+}
+
+// Al recuperar la clave con la pregunta secreta, se levanta el bloqueo.
+function textoEspera(segundos) {
+    const minutos = Math.max(1, Math.ceil(segundos / 60));
+    return minutos === 1 ? '1 minuto' : `${minutos} minutos`;
+}
+
+// Enlace "¿Olvidaste tu contraseña? Recuperar aquí" (usa la pregunta secreta).
+function mostrarEnlaceRecuperacion(preguntaId) {
+    const linkRecuperacion = document.getElementById('linkRecuperacion');
+    if (!linkRecuperacion || !preguntaId) return;
+
+    linkRecuperacion.style.display = 'block';
+    document.getElementById('enlaceRecuperarContraseña').onclick = (e) => {
+        e.preventDefault();
+        linkRecuperacion.style.display = 'none';
+        mostrarModalRecuperacion(preguntaId);
+    };
+}
+
+// Alerta de bloqueo: sin crear solicitud al comité. La recuperación con
+// la pregunta secreta sigue disponible.
+function mostrarBloqueoIntentos(segundos, preguntaId) {
+    const errorConsulta = document.getElementById('errorConsulta');
+    const inputContrasena = document.getElementById('contrasena');
+
+    errorConsulta.innerHTML =
+        `🔒 Por seguridad, los intentos de ingreso están bloqueados por ahora. ` +
+        `Podrás volver a intentarlo en ${textoEspera(segundos)}.`;
+    errorConsulta.style.display = 'block';
+
+    if (inputContrasena) {
+        inputContrasena.value = '';
+        inputContrasena.style.display = 'none';
+    }
+
+    mostrarEnlaceRecuperacion(preguntaId);
+}
+
+// Consultas internas: la contraseña debe coincidir con la de algún
+// miembro del comité (la misma que usan en el Portal Administrativo).
+// La comparación se hace en Supabase (verify_comite_password); la
+// contraseña nunca se compara en el navegador.
+async function verificarContraseñaComite(contrasena) {
+    try {
+        const respuesta = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/verify_comite_password`,
+            {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify({ p_contrasena: contrasena })
+            }
+        );
+
+        if (!respuesta.ok) return false;
+
+        const datos = await respuesta.json();
+        return datos === true;
+    } catch (error) {
+        console.error('Error al verificar contraseña del comité:', error);
+        return false;
+    }
+}
+
+async function guardarContraseñaYPregunta(documento, contrasena, preguntaId, respuesta) {
+    try {
+        const respuestaFetch = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/configurar_primera_vez`,
+            {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify({
+                    p_documento: documento,
+                    p_contrasena: contrasena,
+                    p_pregunta_id: parseInt(preguntaId),
+                    p_respuesta: respuesta
+                })
+            }
+        );
+
+        if (!respuestaFetch.ok) throw new Error('Error guardando configuración');
+
+        const datos = await respuestaFetch.json();
+        return datos === true;
+    } catch (error) {
+        console.error('Error al guardar contraseña y pregunta:', error);
+        return false;
+    }
+}
+
+// Recuperar la clave: Supabase verifica la respuesta secreta y guarda la
+// nueva clave en un solo paso (con límite de intentos).
+// Devuelve { ok, bloqueado, segundos_restantes, intentos } o { error: true }.
+async function recuperarClaveAfiliado(documento, respuesta, nuevaContrasena) {
+    try {
+        const respuestaFetch = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/recuperar_clave_afiliado`,
+            {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify({
+                    p_documento: documento,
+                    p_respuesta: respuesta,
+                    p_nueva: nuevaContrasena
+                })
+            }
+        );
+
+        if (!respuestaFetch.ok) throw new Error('HTTP ' + respuestaFetch.status);
+        return await respuestaFetch.json();
+    } catch (error) {
+        console.error('Error al recuperar la clave:', error);
+        return { ok: false, bloqueado: false, segundos_restantes: 0, intentos: 0, error: true };
+    }
+}
+
+async function crearSolicitudResetAfiliado(documento) {
+    try {
+        const respuesta = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/crear_solicitud_reset_afiliado`,
+            {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify({
+                    p_documento: documento
+                })
+            }
+        );
+        
+        if (!respuesta.ok) throw new Error('Error creando solicitud');
+        
+        return true;
+    } catch (error) {
+        console.error('Error creando solicitud de reset:', error);
+        return false;
+    }
+}
+
+// ======================================================
+// FUNCIONES DE MODALES
+// ======================================================
+
+function mostrarModalPrimeraConfiguracion() {
+    document.getElementById('nuevaContrasena').value = '';
+    document.getElementById('repiteContrasena').value = '';
+    document.getElementById('preguntaSecreta').value = '';
+    document.getElementById('respuestaSecreta').value = '';
+    document.getElementById('errorConfig').textContent = '';
+    document.getElementById('errorConfig').style.display = 'none';
+    document.getElementById('modalPrimeraConfiguracion').style.display = 'flex';
+}
+
+function ocultarModalPrimeraConfiguracion() {
+    document.getElementById('modalPrimeraConfiguracion').style.display = 'none';
+    document.getElementById('nuevaContrasena').value = '';
+    document.getElementById('repiteContrasena').value = '';
+    document.getElementById('preguntaSecreta').value = '';
+    document.getElementById('respuestaSecreta').value = '';
+    document.getElementById('errorConfig').textContent = '';
+    document.getElementById('errorConfig').style.display = 'none';
+}
+
+function mostrarModalRecuperacion(preguntaId) {
+    const pregunta = PREGUNTAS_SECRETAS[preguntaId] || 'Pregunta no encontrada';
+    document.getElementById('textoPreguntaSecreta').textContent = pregunta;
+    intentosFallidosRecuperacion = 0;
+    document.getElementById('respuestaRecuperacion').value = '';
+    document.getElementById('nuevaContrasena2').value = '';
+    document.getElementById('repiteContrasena2').value = '';
+    document.getElementById('errorRecupera').textContent = '';
+    document.getElementById('errorRecupera').style.display = 'none';
+    setTimeout(() => {
+        document.getElementById('respuestaRecuperacion').focus();
+    }, 100);
+    document.getElementById('modalRecuperacion').style.display = 'flex';
+}
+
+function ocultarModalRecuperacion() {
+    document.getElementById('modalRecuperacion').style.display = 'none';
+    document.getElementById('respuestaRecuperacion').value = '';
+    document.getElementById('nuevaContrasena2').value = '';
+    document.getElementById('repiteContrasena2').value = '';
+    document.getElementById('errorRecupera').textContent = '';
+    document.getElementById('errorRecupera').style.display = 'none';
+    intentosFallidosRecuperacion = 0;
+}
+
+function mostrarModalSolicitarReset() {
+    document.getElementById('modalSolicitarReset').style.display = 'flex';
+}
+
+function ocultarModalSolicitarReset() {
+    document.getElementById('modalSolicitarReset').style.display = 'none';
+}
+
+// ======================================================
+// FUNCIÓN CONSULTAR MEJORADA
+// ======================================================
+
+// Nueva función consultar() que PRIMERO valida autenticación
 async function consultar() {
+    const documento = document.getElementById("documento").value.trim();
+    const contrasena = document.getElementById("contrasena")?.value.trim() || '';
+    const errorConsulta = document.getElementById("errorConsulta");
+    const inputContrasena = document.getElementById("contrasena");
+    
+    if (!documento) {
+        errorConsulta.innerHTML = '❌ Por favor ingresa tu documento';
+        errorConsulta.style.display = 'block';
+        return;
+    }
+    
+    // Detectar consulta interna
+    esConsultaInterna = documento.endsWith('000');
+    documentoActual = esConsultaInterna ? documento.slice(0, -3) : documento;
+    autenticacionCompleta = false;
+    
+    // Si contraseña NO está visible, validar documento PRIMERO
+    if (!inputContrasena || inputContrasena.style.display === 'none') {
+        // El contador de intentos solo se reinicia al validar el documento,
+        // no cada vez que se envía la contraseña.
+        intentosFallidos = 0;
+
+        errorConsulta.innerHTML = '⏳ Validando...';
+        errorConsulta.style.display = 'block';
+        
+        if (esConsultaInterna) {
+            // Consulta interna: el documento (sin los 000) debe existir
+            // ANTES de pedir la contraseña del comité.
+            const afiliadoInterno = await verificarAfiliadoExiste(documentoActual);
+
+            if (!afiliadoInterno) {
+                errorConsulta.innerHTML = '❌ Documento no encontrado';
+                errorConsulta.style.display = 'block';
+                if (inputContrasena) inputContrasena.style.display = 'none';
+                return;
+            }
+
+            errorConsulta.style.display = 'none';
+            if (inputContrasena) {
+                inputContrasena.style.display = 'block';
+                inputContrasena.value = '';
+                inputContrasena.focus();
+            }
+            return;
+        }
+        
+        // Consulta de afiliado: validar que existe
+        const afiliado = await verificarAfiliadoExiste(documentoActual);
+        
+        if (!afiliado) {
+            errorConsulta.innerHTML = '❌ Documento no encontrado';
+            errorConsulta.style.display = 'block';
+            if (inputContrasena) inputContrasena.style.display = 'none';
+            return;
+        }
+        
+        // Documento existe: mostrar modal si es primera vez
+        if (!afiliado.tiene_clave) {
+            errorConsulta.style.display = 'none';
+            if (inputContrasena) inputContrasena.style.display = 'none';
+            mostrarModalPrimeraConfiguracion();
+            return;
+        }
+        
+        // ¿Este documento está bloqueado por intentos fallidos?
+        const segundosBloqueo = await consultarBloqueoAfiliado(documentoActual);
+        if (segundosBloqueo > 0) {
+            mostrarBloqueoIntentos(segundosBloqueo, afiliado.pregunta_secreta_id);
+            return;
+        }
+        
+        // Mostrar campo de contraseña
+        errorConsulta.style.display = 'none';
+        if (inputContrasena) {
+            inputContrasena.style.display = 'block';
+            inputContrasena.value = '';
+            inputContrasena.focus();
+        }
+        return;
+    }
+    
+    // Campo de contraseña VISIBLE: validar contraseña
+    if (!contrasena) {
+        errorConsulta.innerHTML = '❌ Por favor ingresa tu contraseña';
+        errorConsulta.style.display = 'block';
+        return;
+    }
+    
+    errorConsulta.innerHTML = '⏳ Verificando...';
+    errorConsulta.style.display = 'block';
+    
+    if (esConsultaInterna) {
+        // Consulta interna: la contraseña debe ser la de un miembro del comité
+        const esValidaComite = await verificarContraseñaComite(contrasena);
+
+        if (!esValidaComite) {
+            intentosFallidos++;
+            inputContrasena.value = '';
+
+            if (intentosFallidos < MAX_INTENTOS) {
+                errorConsulta.innerHTML = `❌ Contraseña incorrecta (Intento ${intentosFallidos}/${MAX_INTENTOS})`;
+                errorConsulta.style.display = 'block';
+                inputContrasena.focus();
+            } else {
+                // Sin recuperación por pregunta: el comité no la usa.
+                mostrarBusqueda();
+                errorConsulta.innerHTML = '❌ Máximo de intentos excedidos. Vuelve a empezar.';
+                errorConsulta.style.display = 'block';
+            }
+            return;
+        }
+
+        errorConsulta.style.display = 'none';
+    } else {
+        // Validar contraseña del afiliado (el conteo y el bloqueo viven en Supabase)
+        const acceso = await verificarAccesoAfiliado(documentoActual, contrasena);
+        
+        if (acceso.error) {
+            errorConsulta.innerHTML = '❌ No se pudo verificar en este momento. Intenta de nuevo.';
+            errorConsulta.style.display = 'block';
+            return;
+        }
+        
+        if (!acceso.ok) {
+            inputContrasena.value = '';
+            const afiliado = await verificarAfiliadoExiste(documentoActual);
+            const preguntaId = afiliado?.pregunta_secreta_id;
+            
+            if (acceso.bloqueado) {
+                // Sin solicitud al comité: solo se avisa y se espera.
+                mostrarBloqueoIntentos(acceso.segundos_restantes, preguntaId);
+                return;
+            }
+            
+            intentosFallidos = acceso.intentos;
+            errorConsulta.innerHTML = `❌ Contraseña incorrecta (Intento ${acceso.intentos}/${MAX_INTENTOS})`;
+            errorConsulta.style.display = 'block';
+            mostrarEnlaceRecuperacion(preguntaId);
+            inputContrasena.focus();
+            return;
+        }
+        
+        errorConsulta.style.display = 'none';
+    }
+    
+    // Autenticación exitosa: buscar créditos
+    autenticacionCompleta = true;
+    buscarCredito();
+}
+
+async function buscarCredito() {
 
 let documento =
     document.getElementById("documento").value.trim();
@@ -574,7 +1047,7 @@ if (registrosBD.length > 0) {
 
     const respuestaAfiliado = await fetch(
 
-        `${SUPABASE_URL}/rest/v1/Afiliados?Documento=eq.${documentoAfiliado}`,
+        `${SUPABASE_URL}/rest/v1/Afiliados?select=Nombre,Fecha_Retiro_Sind&Documento=eq.${documentoAfiliado}`,
 
         {
 
@@ -1183,6 +1656,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         });
 
+    // Agregar listener para ENTER en campo de contraseña
+    const inputContrasena = document.getElementById("contrasena");
+    if (inputContrasena) {
+        inputContrasena.addEventListener("keypress", function(e){
+            if(e.key === "Enter"){
+                consultar();
+            }
+        });
+    }
+
 });
 
 function formatearMeses(valor) {
@@ -1642,3 +2125,162 @@ async function cargarComunicados() {
     }
 
 }
+
+// ======================================================
+// LISTENERS DE MODALES Y FORMULARIOS
+// ======================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Función auxiliar para mostrar/ocultar contraseña
+    window.toggleMostrarContraseña = function(idInput) {
+        const input = document.getElementById(idInput);
+        const tipo = input.type === 'password' ? 'text' : 'password';
+        input.type = tipo;
+    };
+    
+    // Las respuestas secretas solo admiten MAYÚSCULAS y sin tildes:
+    // se corrige mientras se escribe (no solo visualmente).
+    ['respuestaSecreta', 'respuestaRecuperacion'].forEach((id) => {
+        const campo = document.getElementById(id);
+        if (!campo) return;
+
+        campo.addEventListener('input', (e) => {
+            if (e.isComposing) return;
+            const limpio = campo.value
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toUpperCase();
+
+            if (limpio !== campo.value) {
+                const posicion = campo.selectionStart;
+                const diferencia = campo.value.length - limpio.length;
+                campo.value = limpio;
+                const nueva = Math.max(0, (posicion || 0) - Math.max(0, diferencia));
+                campo.setSelectionRange(nueva, nueva);
+            }
+        });
+    });
+    
+    // ========== MODAL PRIMERA CONFIGURACIÓN ==========
+    const formPrimeraConfig = document.getElementById('formPrimeraConfiguracion');
+    const btnCancelarConfig = document.getElementById('btnCancelarConfig');
+    const errorConfig = document.getElementById('errorConfig');
+    
+    if (formPrimeraConfig) {
+        formPrimeraConfig.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nueva = document.getElementById('nuevaContrasena').value;
+            const repite = document.getElementById('repiteContrasena').value;
+            const preguntaId = document.getElementById('preguntaSecreta').value;
+            const respuesta = document.getElementById('respuestaSecreta').value.toUpperCase();
+            
+            if (nueva !== repite) {
+                errorConfig.textContent = 'Las contraseñas no coinciden';
+                errorConfig.style.display = 'block';
+                return;
+            }
+            if (nueva.length < 8) {
+                errorConfig.textContent = 'La contraseña debe tener al menos 8 caracteres';
+                errorConfig.style.display = 'block';
+                return;
+            }
+            errorConfig.textContent = '⏳ Guardando...';
+            errorConfig.style.display = 'block';
+            const exito = await guardarContraseñaYPregunta(documentoActual, nueva, preguntaId, respuesta);
+            if (exito) {
+                ocultarModalPrimeraConfiguracion();
+                document.getElementById('errorConsulta').style.display = 'none';
+                buscarCredito();
+            } else {
+                errorConfig.textContent = 'Error al guardar. Intenta nuevamente.';
+            }
+        });
+        
+        btnCancelarConfig.addEventListener('click', () => {
+            ocultarModalPrimeraConfiguracion();
+            mostrarBusqueda();
+        });
+    }
+    
+    // ========== MODAL RECUPERACIÓN ==========
+    const formRecuperacion = document.getElementById('formRecuperacion');
+    const btnCancelarRecupera = document.getElementById('btnCancelarRecupera');
+    const errorRecupera = document.getElementById('errorRecupera');
+    
+    if (formRecuperacion) {
+        formRecuperacion.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const respuesta = document.getElementById('respuestaRecuperacion').value.toUpperCase();
+            const nueva = document.getElementById('nuevaContrasena2').value;
+            const repite = document.getElementById('repiteContrasena2').value;
+            
+            if (nueva !== repite) {
+                errorRecupera.textContent = 'Las contraseñas no coinciden';
+                errorRecupera.style.display = 'block';
+                return;
+            }
+            if (nueva.length < 8) {
+                errorRecupera.textContent = 'La contraseña debe tener al menos 8 caracteres';
+                errorRecupera.style.display = 'block';
+                return;
+            }
+            
+            errorRecupera.textContent = '⏳ Verificando...';
+            errorRecupera.style.display = 'block';
+            
+            const resultado = await recuperarClaveAfiliado(documentoActual, respuesta, nueva);
+            
+            if (resultado.error) {
+                errorRecupera.textContent = 'No se pudo completar. Intenta nuevamente.';
+                return;
+            }
+            
+            if (!resultado.ok) {
+                intentosFallidosRecuperacion++;
+                const ofrecerComite = resultado.bloqueado || intentosFallidosRecuperacion >= MAX_INTENTOS_RECUPERACION;
+                
+                let mensaje;
+                if (resultado.bloqueado) {
+                    mensaje = `🔒 Por seguridad, la recuperación está bloqueada por ahora. Podrás volver a intentarlo en ${textoEspera(resultado.segundos_restantes)}.`;
+                } else if (ofrecerComite) {
+                    mensaje = '❌ Respuesta incorrecta.';
+                } else {
+                    mensaje = `❌ Respuesta incorrecta (Intento ${intentosFallidosRecuperacion}/${MAX_INTENTOS_RECUPERACION})`;
+                }
+                
+                if (ofrecerComite) {
+                    errorRecupera.innerHTML = `${mensaje}<br><a href="#" id="enlacePedirResetAdmin" style="color: #0066cc; text-decoration: underline;">Pedir al comité que resetee</a>`;
+                    document.getElementById('enlacePedirResetAdmin').onclick = async (e) => {
+                        e.preventDefault();
+                        await crearSolicitudResetAfiliado(documentoActual);
+                        ocultarModalRecuperacion();
+                        mostrarModalSolicitarReset();
+                    };
+                } else {
+                    errorRecupera.textContent = mensaje;
+                }
+                return;
+            }
+            
+            // Contraseña cambiada: se reinicia el portal para que quede como
+            // la primera vez (sin datos escritos antes).
+            errorRecupera.textContent = '✅ Contraseña cambiada. Reiniciando el portal...';
+            setTimeout(() => {
+                window.location.replace(window.location.pathname);
+            }, 1200);
+        });
+        
+        btnCancelarRecupera.addEventListener('click', () => {
+            ocultarModalRecuperacion();
+        });
+    }
+    
+    // ========== MODAL SOLICITAR RESET ==========
+    const btnCerrarSolicitud = document.getElementById('btnCerrarSolicitud');
+    if (btnCerrarSolicitud) {
+        btnCerrarSolicitud.addEventListener('click', () => {
+            ocultarModalSolicitarReset();
+            mostrarBusqueda();
+        });
+    }
+});

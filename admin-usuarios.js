@@ -44,6 +44,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await cargarAdministradores();
 
+    if (esSuperadmin) {
+        document.getElementById("seccionRestablecimiento").style.display = "block";
+        document.getElementById("buscarReset").addEventListener("input", aplicarFiltrosReset);
+        document.getElementById("filtroEstadoReset").addEventListener("change", aplicarFiltrosReset);
+        await cargarSolicitudesReset();
+    }
+
     document.getElementById("btnNuevoAdmin").addEventListener("click", () => abrirModal());
     document.getElementById("btnCancelarModal").addEventListener("click", cerrarModal);
     document.getElementById("formAdmin").addEventListener("submit", guardarAdmin);
@@ -317,4 +324,221 @@ async function restablecerClave(correo) {
     }
 
     alert(`Se envió un enlace de restablecimiento de contraseña a ${correo}.`);
+}
+
+
+/* ==================================================================
+   Restablecimiento de afiliados (solo Superadministrador)
+   Todo pasa por funciones de Supabase (listar_solicitudes_reset y
+   restablecer_afiliado), que vuelven a verificar el rol en el
+   servidor. No depende de Render.
+   ================================================================== */
+
+let solicitudesReset = [];
+
+// Los datos vienen de una tabla que llena el portal público, así que
+// se escapan antes de pintarlos en el panel.
+function escaparHtml(valor) {
+    return String(valor ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function normalizarTextoReset(valor) {
+    return String(valor ?? "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+}
+
+// Las columnas son "timestamp sin zona": se leen como hora UTC y se
+// muestran en hora de Colombia.
+function formatearFechaHoraReset(valor) {
+    if (!valor) return "—";
+    const texto = String(valor).replace(" ", "T");
+    const conZona = /(Z|[+-]\d{2}(:?\d{2})?)$/.test(texto);
+    const fecha = new Date(conZona ? texto : texto + "Z");
+    if (isNaN(fecha)) return "—";
+    return fecha.toLocaleString("es-CO", {
+        timeZone: "America/Bogota",
+        day: "2-digit", month: "2-digit", year: "numeric",
+        hour: "2-digit", minute: "2-digit"
+    });
+}
+
+function mostrarMensajeReset(texto, tipo) {
+    const p = document.getElementById("mensajeReset");
+    p.textContent = texto;
+    p.className = "mensaje " + (tipo || "");
+}
+
+async function cargarSolicitudesReset() {
+    const cuerpo = document.getElementById("tablaResetBody");
+    cuerpo.innerHTML = `<tr><td colspan="7">Cargando solicitudes...</td></tr>`;
+
+    const { data, error } = await clienteAuth.rpc("listar_solicitudes_reset");
+
+    if (error) {
+        cuerpo.innerHTML = `<tr><td colspan="7">No se pudieron cargar las solicitudes: ${escaparHtml(error.message)}</td></tr>`;
+        return;
+    }
+
+    solicitudesReset = data || [];
+    aplicarFiltrosReset();
+}
+
+function aplicarFiltrosReset() {
+    const texto = normalizarTextoReset(document.getElementById("buscarReset").value.trim());
+    const estadoElegido = document.getElementById("filtroEstadoReset").value;
+    const cuerpo = document.getElementById("tablaResetBody");
+
+    // Cuántas solicitudes pendientes tiene cada documento, para mostrar
+    // una sola fila (la más antigua) con la nota "N solicitudes".
+    const pendientesPorDocumento = {};
+    solicitudesReset.forEach((s) => {
+        if (s.estado === "pendiente") {
+            pendientesPorDocumento[s.documento] = (pendientesPorDocumento[s.documento] || 0) + 1;
+        }
+    });
+
+    const yaVistos = new Set();
+    let visibles = solicitudesReset.filter((s) => {
+        if (s.estado !== "pendiente") return true;
+        if (yaVistos.has(s.documento)) return false;
+        yaVistos.add(s.documento);
+        return true;
+    });
+
+    const totalPendientes = Object.keys(pendientesPorDocumento).length;
+    document.getElementById("contadorPendientes").textContent = totalPendientes || "";
+
+    visibles = visibles.filter((s) => {
+        if (estadoElegido !== "todas" && s.estado !== estadoElegido) return false;
+        if (texto) {
+            const nombre = normalizarTextoReset(s.nombre);
+            const documento = String(s.documento ?? "").toLowerCase();
+            if (!nombre.includes(texto) && !documento.includes(texto)) return false;
+        }
+        return true;
+    });
+
+    // Pendientes primero (la más antigua arriba); luego las atendidas,
+    // la más reciente arriba.
+    visibles.sort((a, b) => {
+        const aPend = a.estado === "pendiente";
+        const bPend = b.estado === "pendiente";
+        if (aPend !== bPend) return aPend ? -1 : 1;
+        if (aPend) return new Date(a.fecha_solicitud) - new Date(b.fecha_solicitud);
+        return new Date(b.fecha_atendida || b.fecha_solicitud) - new Date(a.fecha_atendida || a.fecha_solicitud);
+    });
+
+    document.getElementById("resumenReset").textContent =
+        `${visibles.length} solicitud(es) mostrada(s). Pendientes por atender: ${totalPendientes}.`;
+
+    if (!visibles.length) {
+        cuerpo.innerHTML = `<tr><td colspan="7">No hay solicitudes con este filtro.</td></tr>`;
+        return;
+    }
+
+    cuerpo.innerHTML = "";
+
+    visibles.forEach((s) => {
+        const pendiente = s.estado === "pendiente";
+        const veces = pendientesPorDocumento[s.documento] || 0;
+        const notaRepetida = pendiente && veces > 1
+            ? `<span class="nota-repetida">${veces} solicitudes</span>` : "";
+
+        const atendida = s.fecha_atendida
+            ? formatearFechaHoraReset(s.fecha_atendida) +
+              (s.atendida_por_nombre ? `<br><small>${escaparHtml(s.atendida_por_nombre)}</small>` : "")
+            : "—";
+
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+            <td>${s.nombre ? escaparHtml(s.nombre) : "<em>No está en Afiliados</em>"}</td>
+            <td>${escaparHtml(formatearDocumento(s.documento))}</td>
+            <td>${escaparHtml(s.empresa || "—")}</td>
+            <td>${formatearFechaHoraReset(s.fecha_solicitud)}${notaRepetida}</td>
+            <td class="${pendiente ? "estado-pendiente" : (s.estado === "descartada" ? "estado-descartada" : "estado-activo")}">
+                ${pendiente ? "Pendiente" : (s.estado === "descartada" ? "Descartada" : "Atendida")}
+            </td>
+            <td>${atendida}</td>
+            <td>${pendiente
+                ? `<button type="button" class="btn-restablecer">Restablecer</button>
+                   <button type="button" class="btn-descartar">Descartar</button>`
+                : ""}</td>
+        `;
+
+        fila.querySelector(".btn-restablecer")?.addEventListener("click", (evento) =>
+            restablecerAfiliado(s, evento.currentTarget));
+        fila.querySelector(".btn-descartar")?.addEventListener("click", (evento) =>
+            descartarSolicitud(s, evento.currentTarget));
+
+        cuerpo.appendChild(fila);
+    });
+}
+
+async function restablecerAfiliado(solicitud, boton) {
+    const quien = solicitud.nombre
+        ? `${solicitud.nombre} (documento ${formatearDocumento(solicitud.documento)})`
+        : `el documento ${formatearDocumento(solicitud.documento)}`;
+
+    if (!confirm(
+        `¿Restablecer la configuración de ${quien}?\n\n` +
+        `Se borrarán su contraseña y su pregunta secreta, y tendrá que configurarlas ` +
+        `de nuevo la próxima vez que entre al portal.`
+    )) return;
+
+    boton.disabled = true;
+    boton.textContent = "Restableciendo...";
+    mostrarMensajeReset("", "");
+
+    const { error } = await clienteAuth.rpc("restablecer_afiliado", {
+        p_solicitud_id: solicitud.id
+    });
+
+    if (error) {
+        boton.disabled = false;
+        boton.textContent = "Restablecer";
+        mostrarMensajeReset("No se pudo restablecer: " + error.message, "error");
+        return;
+    }
+
+    mostrarMensajeReset(`Listo: se restableció la configuración de ${quien}.`, "exito");
+    await cargarSolicitudesReset();
+}
+
+// Descartar: la solicitud queda en el historial como "descartada"; NO se
+// toca la contraseña ni la pregunta del afiliado.
+async function descartarSolicitud(solicitud, boton) {
+    const quien = solicitud.nombre
+        ? `${solicitud.nombre} (documento ${formatearDocumento(solicitud.documento)})`
+        : `el documento ${formatearDocumento(solicitud.documento)}`;
+
+    if (!confirm(
+        `¿Descartar la solicitud de ${quien}?\n\n` +
+        `No se restablece su configuración. La solicitud queda guardada en el ` +
+        `historial como "descartada".`
+    )) return;
+
+    boton.disabled = true;
+    boton.textContent = "Descartando...";
+    mostrarMensajeReset("", "");
+
+    const { error } = await clienteAuth.rpc("descartar_solicitud_reset", {
+        p_solicitud_id: solicitud.id
+    });
+
+    if (error) {
+        boton.disabled = false;
+        boton.textContent = "Descartar";
+        mostrarMensajeReset("No se pudo descartar: " + error.message, "error");
+        return;
+    }
+
+    mostrarMensajeReset(`Listo: se descartó la solicitud de ${quien}.`, "exito");
+    await cargarSolicitudesReset();
 }
