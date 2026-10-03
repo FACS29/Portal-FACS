@@ -652,6 +652,30 @@ async function consultarPortalInterno(documento, claveComite) {
     }
 }
 
+// Registra la consulta en Supabase usando la ficha de un solo uso que
+// entregó consultar_portal_afiliado (sin ficha válida no se registra nada).
+async function registrarConsultaSegura(token, codigoCredito) {
+    if (!token) return;
+
+    try {
+        await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/registrar_consulta`,
+            {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify({
+                    p_token: token,
+                    p_codigo: codigoCredito,
+                    p_navegador: navigator.userAgent,
+                    p_plataforma: navigator.platform
+                })
+            }
+        );
+    } catch (error) {
+        console.error('Error registrando consulta:', error);
+    }
+}
+
 // Comunicados generales (los que ve cualquiera al abrir el portal).
 async function listarComunicadosPublicos() {
     try {
@@ -1092,7 +1116,7 @@ if (!datosPortal) {
     throw new Error("No hay datos de la consulta. Vuelve a ingresar tu documento y contraseña.");
 }
 
-const ultimaConsulta = await obtenerUltimaConsulta(documento);
+const ultimaConsulta = datosPortal.ultima_consulta || null;
 
 const registrosBD = datosPortal.creditos || [];
 
@@ -1577,8 +1601,8 @@ if (textoUltimaConsulta) {
 }
 
 if (!esConsultaInterna) {
-    await registrarConsulta(
-        documento,
+    await registrarConsultaSegura(
+        datosPortal.token_consulta,
         vigente["Codigo Credito"]
     );
 }
