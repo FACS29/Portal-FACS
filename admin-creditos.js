@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         `${sesion.perfil.nombres} ${sesion.perfil.apellidos}`;
     document.getElementById("btnSalir").addEventListener("click", cerrarSesion);
 
-    await cargarDatos();
+    await Promise.all([cargarDatos(), cargarFechaActualizacion()]);
     aplicarFiltros();
 
     ["buscarTexto", "filtroEmpresa", "filtroEstado", "filtroAnio"]
@@ -62,6 +62,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btnCerrarDetalle").addEventListener("click", () => {
         document.getElementById("modalDetalle").style.display = "none";
     });
+
+    document.getElementById("btnCopiarCredito").addEventListener("click", copiarDatosDelCredito);
 });
 
 function normalizarDocumento(valor) {
@@ -157,6 +159,227 @@ function aplicarFiltros() {
     });
 }
 
+/* ==================================================================
+   Copiar datos del crédito
+   ------------------------------------------------------------------
+   Mismo texto que el botón "Copiar datos del crédito" de la consulta
+   interna del portal público (script.js > construirResumenCopiable).
+   La nota de "meses de gracia y/o pagos parciales" se calcula con la
+   MISMA lógica del cronograma del portal (construirTablaAmortizacion),
+   sin armar la tabla. Si cambias esa lógica en el portal público,
+   cámbiala también aquí (calcularMesesGraciaYParciales).
+   ================================================================== */
+
+const TEXTO_BOTON_COPIAR = "📋 Copiar datos del crédito";
+let ultimaActualizacionReal = null;   // texto tal como viene de Configuracion
+let textoResumenActual = "";
+let temporizadorCopiado = null;
+
+// Fecha de "última actualización" del portal (la usa el cronograma para
+// saber qué cuotas ya vencieron). Es la misma que lee el portal público.
+async function cargarFechaActualizacion() {
+    try {
+        const { data, error } = await clienteAuth
+            .from("Configuracion")
+            .select("Ultima_Actualizacion")
+            .eq("id", 1)
+            .maybeSingle();
+
+        if (error) throw error;
+        if (!data || !data.Ultima_Actualizacion) throw new Error("Configuracion sin fecha");
+
+        ultimaActualizacionReal = data.Ultima_Actualizacion;
+    } catch (error) {
+        console.error("No se pudo leer la fecha de última actualización:", error);
+        ultimaActualizacionReal = null;
+    }
+}
+
+function mismoMes(fecha1, fecha2) {
+    return fecha1.getMonth() === fecha2.getMonth()
+        && fecha1.getFullYear() === fecha2.getFullYear();
+}
+
+function formatearMesesResumen(valor) {
+    return Number.isInteger(valor) ? String(valor) : valor.toFixed(1).replace(".", ",");
+}
+
+function codigoParaResumen(codigo) {
+    codigo = String(codigo || "");
+    if (codigo.length === 7) {
+        return codigo.substring(0, 4) + "-" + codigo.substring(4);
+    }
+    return codigo;
+}
+
+function fechaParaResumen(fecha) {
+    if (!fecha) return "";
+    const partes = fecha.split("-");
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+// Misma cuenta que construirTablaAmortizacion() del portal público:
+// devuelve (meses de gracia) + (pagos parciales × 0.5).
+function calcularMesesGraciaYParciales(credito, pagos, ultimaActualizacion) {
+    const vigente = { ...credito, "Cuota Original": credito.Cuota_Original };
+
+    const fechaActual = new Date(String(ultimaActualizacion).replace(" ", "T"));
+    fechaActual.setHours(23, 59, 59, 999);
+
+    const cuotasPactadas = Number(vigente.Cuotas_Pactadas);
+    const cuotasPagadas = Number(vigente.Cuotas_Pagadas || 0);
+    const fechaInicio = new Date(vigente.Fecha_Inicial);
+    const diaPago = vigente.Empresa === "ELG" ? 25 : 30;
+
+    function esPagoParcial(pago) {
+        const valorPagado = Number(pago.Valor_Cuota || 0);
+        let cuotaEsperada = Number(vigente.Cuota || 0);
+
+        if (vigente.Afiliado === "No" && Number(vigente["Cuota Original"] || 0) > 0) {
+            const cuotaOriginal = Number(vigente["Cuota Original"]);
+            const cuotaActual = Number(vigente.Cuota);
+            const diferenciaOriginal = Math.abs(valorPagado - cuotaOriginal);
+            const diferenciaActual = Math.abs(valorPagado - cuotaActual);
+            cuotaEsperada = diferenciaOriginal <= diferenciaActual ? cuotaOriginal : cuotaActual;
+        }
+
+        return valorPagado < cuotaEsperada;
+    }
+
+    const totalParciales = pagos.filter(esPagoParcial).length;
+    let cuotasExtra = Math.ceil(totalParciales / 2);
+    let mesesGraciaCompleta = 0;
+    let mesesPagoParcial = 0;
+    let numeroCuota = 1;
+    let finalizarCronograma = false;
+    const creditoAnulado = String(vigente.Estado || "").toLowerCase().includes("anulado");
+
+    while (
+        numeroCuota <= cuotasPactadas + cuotasExtra
+        && !(creditoAnulado && numeroCuota > pagos.length)
+        && !finalizarCronograma
+    ) {
+        let detenerDespuesDeEstaFila = false;
+
+        const mesObjetivo = fechaInicio.getMonth() + (numeroCuota - 1);
+        const fechaCuota = new Date(fechaInicio.getFullYear(), mesObjetivo, 1);
+        const ultimoDiaDelMes = new Date(fechaCuota.getFullYear(), fechaCuota.getMonth() + 1, 0).getDate();
+        fechaCuota.setDate(Math.min(diaPago, ultimoDiaDelMes));
+
+        const pago = pagos.find(p => mismoMes(new Date(p.Fecha), fechaCuota));
+
+        if (pago) {
+            if (esPagoParcial(pago)) {
+                mesesPagoParcial++;
+            }
+
+            if (pago.Saldo_Final !== null && pago.Saldo_Final !== "" && Number(pago.Saldo_Final) === 0) {
+                detenerDespuesDeEstaFila = true;
+            }
+        } else {
+            const yaPaso = fechaCuota.getTime() <= fechaActual.getTime();
+
+            if (yaPaso && numeroCuota <= cuotasPagadas + cuotasExtra + 1) {
+                cuotasExtra++;
+                mesesGraciaCompleta++;
+            }
+        }
+
+        if (detenerDespuesDeEstaFila) {
+            finalizarCronograma = true;
+        }
+
+        numeroCuota++;
+    }
+
+    return mesesGraciaCompleta + mesesPagoParcial * 0.5;
+}
+
+function construirResumenCopiable(credito, mesesGraciaYParciales) {
+    const documento = normalizarDocumento(credito.Documento);
+    const documentoFormateado = Number.isFinite(Number(documento))
+        ? Number(documento).toLocaleString("es-CO")
+        : documento;
+
+    const nombre = nombresPorDocumento[documento] || "";
+
+    const lineas = [
+        `Nombre: ${nombre}`,
+        `Documento: ${documentoFormateado}`,
+        `Código de crédito: ${codigoParaResumen(credito.Codigo_Credito)}`,
+        `Estado: ${credito.Estado || ""}`,
+        `Valor del crédito: ${formatearMoneda(credito.Valor_Credito)}`,
+        `Saldo pendiente: ${formatearMoneda(credito.Saldo_Capital)}`,
+        `Capital pagado: ${formatearMoneda(credito.Capital_Pagado)}`,
+        `Cuotas: ${credito.Cuotas_Pagadas || 0} de ${credito.Cuotas_Pactadas || 0}`,
+        `Fecha inicial: ${fechaParaResumen(credito.Fecha_Inicial)}`,
+        `Fecha final: ${fechaParaResumen(credito.Fecha_Final)}`,
+        `Próximo pago: ${fechaParaResumen(credito.Proximo_Pago)}`
+    ];
+
+    if (mesesGraciaYParciales > 0) {
+        lineas.push(
+            `Nota: Este crédito registra ${formatearMesesResumen(mesesGraciaYParciales)} mes(es) de gracia y/o pagos parciales, situación que generó una ampliación del plazo inicialmente pactado.`
+        );
+    }
+
+    return lineas.join("\n");
+}
+
+function prepararBotonCopiar(credito) {
+    const boton = document.getElementById("btnCopiarCredito");
+
+    clearTimeout(temporizadorCopiado);
+    boton.textContent = TEXTO_BOTON_COPIAR;
+
+    if (!ultimaActualizacionReal) {
+        textoResumenActual = "";
+        boton.disabled = true;
+        boton.title = "No se pudo leer la fecha de última actualización (tabla Configuracion).";
+        return;
+    }
+
+    // Mismo orden que usa el portal público: por número de cuota
+    const pagosParaCalculo = pagosCompletos
+        .filter((p) => p.Codigo_Credito === credito.Codigo_Credito)
+        .sort((a, b) => Number(a.Numero_cuota) - Number(b.Numero_cuota));
+
+    const meses = calcularMesesGraciaYParciales(credito, pagosParaCalculo, ultimaActualizacionReal);
+
+    textoResumenActual = construirResumenCopiable(credito, meses);
+    boton.disabled = false;
+    boton.title = "";
+}
+
+async function copiarDatosDelCredito() {
+    const boton = document.getElementById("btnCopiarCredito");
+    if (!textoResumenActual) return;
+
+    let copiado = false;
+
+    try {
+        await navigator.clipboard.writeText(textoResumenActual);
+        copiado = true;
+    } catch {
+        // Respaldo para navegadores o conexiones sin permiso de portapapeles
+        const area = document.createElement("textarea");
+        area.value = textoResumenActual;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.select();
+        try { copiado = document.execCommand("copy"); } catch { copiado = false; }
+        area.remove();
+    }
+
+    boton.textContent = copiado ? "✅ Copiado" : "No se pudo copiar";
+
+    clearTimeout(temporizadorCopiado);
+    temporizadorCopiado = setTimeout(() => {
+        boton.textContent = TEXTO_BOTON_COPIAR;
+    }, 2000);
+}
+
 function mostrarDetalle(codigo) {
     const credito = creditosCompletos.find((c) => c.Codigo_Credito === codigo);
     if (!credito) return;
@@ -171,6 +394,7 @@ function mostrarDetalle(codigo) {
     document.getElementById("detEstado").textContent = credito.Estado || "—";
     document.getElementById("detFechaCredito").textContent = formatearFecha(credito.Fecha_Credito);
     document.getElementById("detFechaInicial").textContent = formatearFecha(credito.Fecha_Inicial);
+    document.getElementById("detFechaFinal").textContent = formatearFecha(credito.Fecha_Final);
     document.getElementById("detValorCredito").textContent = formatearMoneda(credito.Valor_Credito);
     document.getElementById("detVrReal").textContent = formatearMoneda(credito.Vr_Real);
     document.getElementById("detSaldo").textContent = formatearMoneda(credito.Saldo_Capital);
@@ -204,6 +428,8 @@ function mostrarDetalle(codigo) {
             </tr>
         `).join("");
     }
+
+    prepararBotonCopiar(credito);
 
     document.getElementById("modalDetalle").style.display = "flex";
 }

@@ -221,6 +221,9 @@ function mostrarBusqueda() {
 
     document.getElementById("resultado").innerHTML = "";
 
+    datosPortalActual = null;
+    mostrarAvisoConsultaInterna(false);
+
     document.getElementById("pantallaInicio").style.display = "block";
 
     // LIMPIAR TODOS LOS CAMPOS
@@ -597,12 +600,17 @@ async function verificarAfiliadoExiste(documento) {
     }
 }
 
-// Verificación con conteo y bloqueo de intentos (todo en Supabase):
-// devuelve { ok, bloqueado, segundos_restantes, intentos } o { error: true }.
-async function verificarAccesoAfiliado(documento, contrasena) {
+// Consulta del afiliado: Supabase verifica la contraseña (con conteo y
+// bloqueo de intentos) y, SOLO si es correcta, entrega los datos de ese
+// afiliado en la misma llamada. El navegador ya no lee las tablas.
+// Devuelve { ok, bloqueado, segundos_restantes, intentos, nombre, creditos,
+// pagos, comunicados_personales } o { error: true }.
+let datosPortalActual = null;
+
+async function consultarPortalAfiliado(documento, contrasena) {
     try {
         const respuesta = await fetch(
-            `${SUPABASE_URL}/rest/v1/rpc/verificar_acceso_afiliado`,
+            `${SUPABASE_URL}/rest/v1/rpc/consultar_portal_afiliado`,
             {
                 method: 'POST',
                 headers: HEADERS,
@@ -616,8 +624,52 @@ async function verificarAccesoAfiliado(documento, contrasena) {
         if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
         return await respuesta.json();
     } catch (error) {
-        console.error('Error al verificar acceso del afiliado:', error);
+        console.error('Error al consultar el portal:', error);
         return { ok: false, bloqueado: false, segundos_restantes: 0, intentos: 0, error: true };
+    }
+}
+
+// Consulta interna (documento + 000): lo mismo, con la clave del comité.
+async function consultarPortalInterno(documento, claveComite) {
+    try {
+        const respuesta = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/consultar_portal_interno`,
+            {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify({
+                    p_documento: documento,
+                    p_clave: claveComite
+                })
+            }
+        );
+
+        if (!respuesta.ok) throw new Error('HTTP ' + respuesta.status);
+        return await respuesta.json();
+    } catch (error) {
+        console.error('Error en la consulta interna:', error);
+        return { ok: false, bloqueado: false, segundos_restantes: 0, intentos: 0, error: true };
+    }
+}
+
+// Comunicados generales (los que ve cualquiera al abrir el portal).
+async function listarComunicadosPublicos() {
+    try {
+        const respuesta = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/listar_comunicados_publicos`,
+            {
+                method: 'POST',
+                headers: HEADERS,
+                body: JSON.stringify({})
+            }
+        );
+
+        if (!respuesta.ok) return [];
+        const datos = await respuesta.json();
+        return Array.isArray(datos) ? datos : [];
+    } catch (error) {
+        console.error('Error al listar comunicados:', error);
+        return [];
     }
 }
 
@@ -661,6 +713,29 @@ function mostrarEnlaceRecuperacion(preguntaId) {
     };
 }
 
+// Aviso bajo el campo de contraseña en las consultas internas (documento + 000).
+// Se crea desde aquí para no depender de cambios en index.html.
+function mostrarAvisoConsultaInterna(mostrar) {
+    const input = document.getElementById('contrasena');
+    if (!input) return;
+
+    let aviso = document.getElementById('avisoConsultaInterna');
+
+    if (!aviso) {
+        aviso = document.createElement('div');
+        aviso.id = 'avisoConsultaInterna';
+        aviso.style.cssText =
+            'display:none; margin-top:8px; padding:8px 12px; border-radius:8px; ' +
+            'border:1px solid rgba(0,102,204,.35); background:rgba(0,102,204,.08); ' +
+            'color:inherit; font-size:13px; text-align:center;';
+        aviso.textContent =
+            '🔑 Consulta interna: usa la misma contraseña con la que ingresas al Portal Administrativo.';
+        input.insertAdjacentElement('afterend', aviso);
+    }
+
+    aviso.style.display = mostrar ? 'block' : 'none';
+}
+
 // Alerta de bloqueo: sin crear solicitud al comité. La recuperación con
 // la pregunta secreta sigue disponible.
 function mostrarBloqueoIntentos(segundos, preguntaId) {
@@ -676,33 +751,9 @@ function mostrarBloqueoIntentos(segundos, preguntaId) {
         inputContrasena.value = '';
         inputContrasena.style.display = 'none';
     }
+    mostrarAvisoConsultaInterna(false);
 
     mostrarEnlaceRecuperacion(preguntaId);
-}
-
-// Consultas internas: la contraseña debe coincidir con la de algún
-// miembro del comité (la misma que usan en el Portal Administrativo).
-// La comparación se hace en Supabase (verify_comite_password); la
-// contraseña nunca se compara en el navegador.
-async function verificarContraseñaComite(contrasena) {
-    try {
-        const respuesta = await fetch(
-            `${SUPABASE_URL}/rest/v1/rpc/verify_comite_password`,
-            {
-                method: 'POST',
-                headers: HEADERS,
-                body: JSON.stringify({ p_contrasena: contrasena })
-            }
-        );
-
-        if (!respuesta.ok) return false;
-
-        const datos = await respuesta.json();
-        return datos === true;
-    } catch (error) {
-        console.error('Error al verificar contraseña del comité:', error);
-        return false;
-    }
 }
 
 async function guardarContraseñaYPregunta(documento, contrasena, preguntaId, respuesta) {
@@ -863,6 +914,7 @@ async function consultar() {
         // El contador de intentos solo se reinicia al validar el documento,
         // no cada vez que se envía la contraseña.
         intentosFallidos = 0;
+        mostrarAvisoConsultaInterna(false);
 
         errorConsulta.innerHTML = '⏳ Validando...';
         errorConsulta.style.display = 'block';
@@ -883,6 +935,7 @@ async function consultar() {
             if (inputContrasena) {
                 inputContrasena.style.display = 'block';
                 inputContrasena.value = '';
+                mostrarAvisoConsultaInterna(true);
                 inputContrasena.focus();
             }
             return;
@@ -934,12 +987,24 @@ async function consultar() {
     errorConsulta.style.display = 'block';
     
     if (esConsultaInterna) {
-        // Consulta interna: la contraseña debe ser la de un miembro del comité
-        const esValidaComite = await verificarContraseñaComite(contrasena);
+        // Consulta interna: la clave del comité se verifica (y se limita) en Supabase
+        const acceso = await consultarPortalInterno(documentoActual, contrasena);
 
-        if (!esValidaComite) {
-            intentosFallidos++;
+        if (acceso.error) {
+            errorConsulta.innerHTML = '❌ No se pudo verificar en este momento. Intenta de nuevo.';
+            errorConsulta.style.display = 'block';
+            return;
+        }
+
+        if (!acceso.ok) {
             inputContrasena.value = '';
+
+            if (acceso.bloqueado) {
+                mostrarBloqueoIntentos(acceso.segundos_restantes, null);
+                return;
+            }
+
+            intentosFallidos++;
 
             if (intentosFallidos < MAX_INTENTOS) {
                 errorConsulta.innerHTML = `❌ Contraseña incorrecta (Intento ${intentosFallidos}/${MAX_INTENTOS})`;
@@ -954,10 +1019,11 @@ async function consultar() {
             return;
         }
 
+        datosPortalActual = acceso;
         errorConsulta.style.display = 'none';
     } else {
-        // Validar contraseña del afiliado (el conteo y el bloqueo viven en Supabase)
-        const acceso = await verificarAccesoAfiliado(documentoActual, contrasena);
+        // Contraseña del afiliado: el conteo, el bloqueo y los datos viven en Supabase
+        const acceso = await consultarPortalAfiliado(documentoActual, contrasena);
         
         if (acceso.error) {
             errorConsulta.innerHTML = '❌ No se pudo verificar en este momento. Intenta de nuevo.';
@@ -984,10 +1050,11 @@ async function consultar() {
             return;
         }
         
+        datosPortalActual = acceso;
         errorConsulta.style.display = 'none';
     }
     
-    // Autenticación exitosa: buscar créditos
+    // Autenticación exitosa: mostrar créditos (los datos ya vienen en datosPortalActual)
     autenticacionCompleta = true;
     buscarCredito();
 }
@@ -1017,59 +1084,23 @@ btnConsultar.textContent = "Consultando...";
 
 try {
 
-// "ultimaConsulta" y "Creditos" no dependen entre sí -- se piden en
-// paralelo en vez de uno tras otro, para que la consulta responda en
-// el tiempo del más lento de los dos, no en la suma de ambos.
-const [ultimaConsulta, registrosBD] = await Promise.all([
+// Los datos (nombre, créditos, pagos, comunicados personales) ya llegaron
+// con la verificación de la contraseña: no se vuelve a leer ninguna tabla.
+const datosPortal = datosPortalActual;
 
-    obtenerUltimaConsulta(documento),
-
-    fetch(
-
-        `${SUPABASE_URL}/rest/v1/Creditos?Documento=eq.${documento}`,
-
-        {
-
-            headers: HEADERS
-
-        }
-
-    ).then(r => r.json())
-
-]);
-
-let nombreAfiliado = "";
-let fechaRetiroSind = "";
-
-if (registrosBD.length > 0) {
-
-    const documentoAfiliado = registrosBD[0].Documento;
-
-    const respuestaAfiliado = await fetch(
-
-        `${SUPABASE_URL}/rest/v1/Afiliados?select=Nombre,Fecha_Retiro_Sind&Documento=eq.${documentoAfiliado}`,
-
-        {
-
-            headers: HEADERS
-
-        }
-
-    );
-    
-    const afiliadoBD = await respuestaAfiliado.json();
-
-    if (afiliadoBD.length > 0) {
-
-        nombreAfiliado = afiliadoBD[0].Nombre;
-
-        fechaRetiroSind = afiliadoBD[0].Fecha_Retiro_Sind
-            ? formatearFecha(afiliadoBD[0].Fecha_Retiro_Sind)
-            : "";
-       
-    }
-
+if (!datosPortal) {
+    throw new Error("No hay datos de la consulta. Vuelve a ingresar tu documento y contraseña.");
 }
+
+const ultimaConsulta = await obtenerUltimaConsulta(documento);
+
+const registrosBD = datosPortal.creditos || [];
+
+const nombreAfiliado = datosPortal.nombre || "";
+
+const fechaRetiroSind = datosPortal.fecha_retiro_sind
+    ? formatearFecha(datosPortal.fecha_retiro_sind)
+    : "";
 
 // Activar el enlace del buzon en el pie de pagina, ahora que ya
 // sabemos documento y nombre (antes de consultar, permanece oculto).
@@ -1080,7 +1111,7 @@ if (enlaceBuzon && documento) {
     enlaceBuzon.style.display = "inline-block";
 }
 
-if (documento) cargarComunicadosPersonales(documento);
+mostrarComunicadosPersonales(datosPortal.comunicados_personales || []);
 
 const registros = registrosBD.map(c => ({
 
@@ -1189,19 +1220,9 @@ const vigente =
 
 const codigoCredito = vigente["Codigo Credito"];
 
-const respuestaPagos = await fetch(
-
-    `${SUPABASE_URL}/rest/v1/Pagos?Codigo_Credito=eq.${codigoCredito}&order=Numero_cuota.asc`,
-
-    {
-
-        headers: HEADERS
-
-    }
-
-);
-
-const pagos = await respuestaPagos.json();
+const pagos = (datosPortal.pagos || [])
+    .filter(p => p.Codigo_Credito === codigoCredito)
+    .sort((a, b) => Number(a.Numero_cuota) - Number(b.Numero_cuota));
 
 document.getElementById("pantallaInicio").style.display = "none";
 
@@ -2040,20 +2061,12 @@ return {
   -- es el mismo modelo de confianza que ya tiene la consulta de
   créditos por documento (ver diagnóstico original).
 */
-async function cargarComunicadosPersonales(documentoConsultado) {
+// Los comunicados personales ya vienen dentro de la respuesta de la consulta.
+function mostrarComunicadosPersonales(personales) {
 
     try {
 
-        const respuesta = await fetch(
-            `${SUPABASE_URL}/rest/v1/Comunicados?activo=eq.true&documento_destino=eq.${encodeURIComponent(documentoConsultado)}&order=fecha_publicacion.desc`,
-            { headers: HEADERS }
-        );
-
-        if (!respuesta.ok) return;
-
-        const personales = await respuesta.json();
-
-        if (!personales.length) return;
+        if (!personales || !personales.length) return;
 
         const contenedor = document.getElementById("listaComunicados");
 
@@ -2081,7 +2094,7 @@ async function cargarComunicadosPersonales(documentoConsultado) {
         });
 
     } catch (error) {
-        console.error("No se pudieron cargar los comunicados personales:", error);
+        console.error("No se pudieron mostrar los comunicados personales:", error);
     }
 
 }
@@ -2095,14 +2108,7 @@ async function cargarComunicados() {
 
     try {
 
-        const respuesta = await fetch(
-            `${SUPABASE_URL}/rest/v1/Comunicados?activo=eq.true&documento_destino=is.null&order=fecha_publicacion.desc&limit=5`,
-            { headers: HEADERS }
-        );
-
-        if (!respuesta.ok) return;
-
-        const comunicados = await respuesta.json();
+        const comunicados = await listarComunicadosPublicos();
 
         if (!comunicados.length) return;
 
@@ -2188,9 +2194,17 @@ document.addEventListener('DOMContentLoaded', () => {
             errorConfig.style.display = 'block';
             const exito = await guardarContraseñaYPregunta(documentoActual, nueva, preguntaId, respuesta);
             if (exito) {
+                const acceso = await consultarPortalAfiliado(documentoActual, nueva);
                 ocultarModalPrimeraConfiguracion();
                 document.getElementById('errorConsulta').style.display = 'none';
-                buscarCredito();
+
+                if (acceso && acceso.ok) {
+                    datosPortalActual = acceso;
+                    autenticacionCompleta = true;
+                    buscarCredito();
+                } else {
+                    mostrarBusqueda();
+                }
             } else {
                 errorConfig.textContent = 'Error al guardar. Intenta nuevamente.';
             }
