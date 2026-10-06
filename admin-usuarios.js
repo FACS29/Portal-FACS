@@ -312,7 +312,7 @@ async function eliminarAdmin(admin) {
 }
 
 async function restablecerClave(correo) {
-    const clienteAuthPublico = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const clienteAuthPublico = clienteAuth; // misma conexión de admin-guard.js (evita instancias duplicadas)
 
     const { error } = await clienteAuthPublico.auth.resetPasswordForEmail(correo, {
         redirectTo: new URL("set-password.html", window.location.href).href

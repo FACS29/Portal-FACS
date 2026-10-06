@@ -91,8 +91,6 @@ async function traerTodasLasFilas(cliente, tabla, columnas) {
 }
 
 async function cargarDatos() {
-    const clienteAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     const [afiliadosRes, creditosRes, pagosRes] = await Promise.all([
         traerTodasLasFilas(clienteAuth, "Afiliados", "Documento, Nombre"),
         traerTodasLasFilas(clienteAuth, "Creditos", "*"),

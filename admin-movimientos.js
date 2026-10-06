@@ -90,8 +90,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function cargarMovimientos() {
-    const clienteAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     const [capitalRes, creditosRes, pagosRes, anuladosRes] = await Promise.all([
         clienteAuth.from("Capital_Semilla").select("fecha, empresa, valor"),
         traerTodasLasFilas(clienteAuth, "Creditos", "Codigo_Credito, Empresa, Vr_Real, Fecha_Credito"),

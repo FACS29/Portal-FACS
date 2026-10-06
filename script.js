@@ -271,9 +271,12 @@ function mostrarBusqueda() {
         .querySelectorAll(".tarjeta-comunicado-personal")
         .forEach((el) => el.remove());
 
-    if (!document.getElementById("listaComunicados").children.length) {
-        document.getElementById("seccionComunicados").style.display = "none";
-    }
+    cerrarVentanaComunicados();
+
+    // Los generales vuelven a la zona de arriba (estaba oculta mientras se
+    // veían debajo de la bienvenida); si no hay ninguno, queda oculta.
+    document.getElementById("seccionComunicados").style.display =
+        document.getElementById("listaComunicados").children.length ? "block" : "none";
 
     window.scrollTo({
         top: 0,
@@ -1135,8 +1138,6 @@ if (enlaceBuzon && documento) {
     enlaceBuzon.style.display = "inline-block";
 }
 
-mostrarComunicadosPersonales(datosPortal.comunicados_personales || []);
-
 const registros = registrosBD.map(c => ({
 
     ...c,
@@ -1606,6 +1607,13 @@ if (!esConsultaInterna) {
         vigente["Codigo Credito"]
     );
 }
+
+ // Los comunicados dirigidos a esta persona van justo DEBAJO de la bienvenida,
+ // que es donde el portal deja la pantalla después de consultar.
+ await mostrarComunicadosDebajoDeBienvenida(
+     datosPortal.comunicados_personales || [],
+     { conVentana: !esConsultaInterna }
+ );
 
  const bienvenida = document.querySelector(".bienvenida");
 
@@ -2085,25 +2093,133 @@ return {
   -- es el mismo modelo de confianza que ya tiene la consulta de
   créditos por documento (ver diagnóstico original).
 */
-// Los comunicados personales ya vienen dentro de la respuesta de la consulta.
-function mostrarComunicadosPersonales(personales) {
+// ---------- Comunicados debajo de la bienvenida + ventana emergente ----------
+
+const CLAVE_COMUNICADOS_ENTENDIDOS = "facs_comunicados_entendidos";
+
+function leerComunicadosEntendidos() {
+    try {
+        const guardado = JSON.parse(localStorage.getItem(CLAVE_COMUNICADOS_ENTENDIDOS) || "[]");
+        return Array.isArray(guardado) ? guardado : [];
+    } catch (error) {
+        return []; // sin almacenamiento disponible: se mostrará la ventana siempre
+    }
+}
+
+function guardarComunicadosEntendidos(ids) {
+    try {
+        const todos = leerComunicadosEntendidos().concat(ids);
+        const sinRepetir = [...new Set(todos)].slice(-200);
+        localStorage.setItem(CLAVE_COMUNICADOS_ENTENDIDOS, JSON.stringify(sinRepetir));
+    } catch (error) {
+        // si no se puede guardar, no pasa nada: solo volverá a aparecer la ventana
+    }
+}
+
+function htmlTarjetaComunicado(c, esPersonal) {
+    return `
+        <div class="tarjeta-comunicado${esPersonal ? " tarjeta-comunicado-personal" : ""}">
+            <div class="comunicado-titulo">${esPersonal ? "📩 Mensaje para ti: " : ""}${escaparHtml(c.titulo)}</div>
+            <div class="comunicado-texto">${escaparHtml(c.mensaje)}</div>
+            <div class="comunicado-fecha">${formatearFechaHora(c.fecha_publicacion)}</div>
+        </div>
+    `;
+}
+
+function cerrarVentanaComunicados() {
+    const ventana = document.getElementById("modalComunicados");
+    if (ventana) ventana.remove();
+}
+
+// Ventana emergente con los mensajes que esta persona todavía no ha marcado
+// como "Entendido" en este dispositivo. Los mensajes siguen apareciendo
+// siempre debajo de la bienvenida; la ventana solo avisa de los nuevos.
+function mostrarVentanaComunicados(personales, generales) {
+    const entendidos = leerComunicadosEntendidos();
+
+    const nuevos = [
+        ...personales.map(c => ({ ...c, esPersonal: true })),
+        ...generales.map(c => ({ ...c, esPersonal: false }))
+    ].filter(c => !entendidos.includes(c.id));
+
+    if (!nuevos.length) return;
+
+    cerrarVentanaComunicados();
+
+    const fondo = document.createElement("div");
+    fondo.id = "modalComunicados";
+    fondo.className = "modal-fondo";
+    fondo.setAttribute("role", "dialog");
+    fondo.setAttribute("aria-modal", "true");
+    fondo.setAttribute("aria-labelledby", "tituloModalComunicados");
+
+    fondo.innerHTML = `
+        <div class="modal-caja" style="max-height:85vh; overflow-y:auto; text-align:left;">
+            <h2 id="tituloModalComunicados">📩 ${nuevos.length === 1 ? "Tiene un mensaje del Fondo" : "Tiene mensajes del Fondo"}</h2>
+            ${nuevos.map(c => htmlTarjetaComunicado(c, c.esPersonal)).join("")}
+            <div class="modal-botones">
+                <button type="button" id="btnEntendidoComunicados" class="btn-primario">Entendido</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(fondo);
+
+    const alTeclear = (evento) => {
+        if (evento.key === "Escape") cerrar();
+    };
+
+    function cerrar() {
+        guardarComunicadosEntendidos(nuevos.map(c => c.id));
+        document.removeEventListener("keydown", alTeclear);
+        fondo.remove();
+    }
+
+    document.addEventListener("keydown", alTeclear);
+
+    const boton = document.getElementById("btnEntendidoComunicados");
+    boton.addEventListener("click", cerrar);
+    boton.focus();
+}
+
+// Pone TODOS los comunicados (personales y generales) justo debajo de la
+// tarjeta de bienvenida, que es donde el portal deja la pantalla después de
+// consultar, y avisa con una ventana emergente de los que sean nuevos.
+async function mostrarComunicadosDebajoDeBienvenida(personales, opciones) {
 
     try {
 
-        if (!personales || !personales.length) return;
+        personales = personales || [];
+        const conVentana = !opciones || opciones.conVentana !== false;
 
-        const contenedor = document.getElementById("listaComunicados");
+        let generales = comunicadosGeneralesActuales;
+        if (generales === null) generales = await listarComunicadosPublicos();
 
-        const bloquePersonal = personales.map(c => `
-            <div class="tarjeta-comunicado tarjeta-comunicado-personal">
-                <div class="comunicado-titulo">Para ti: ${escaparHtml(c.titulo)}</div>
-                <div class="comunicado-texto">${escaparHtml(c.mensaje)}</div>
-                <div class="comunicado-fecha">${formatearFechaHora(c.fecha_publicacion)}</div>
-            </div>
-        `).join("");
+        if (!personales.length && !generales.length) return;
 
-        contenedor.innerHTML = bloquePersonal + contenedor.innerHTML;
-        document.getElementById("seccionComunicados").style.display = "block";
+        const bienvenida = document.querySelector(".bienvenida");
+
+        if (bienvenida) {
+            const anterior = document.getElementById("comunicadosPersonalesResultado");
+            if (anterior) anterior.remove();
+
+            const bloque = document.createElement("div");
+            bloque.id = "comunicadosPersonalesResultado";
+            bloque.style.margin = "18px 0";
+            bloque.innerHTML =
+                personales.map(c => htmlTarjetaComunicado(c, true)).join("") +
+                generales.map(c => htmlTarjetaComunicado(c, false)).join("");
+            bienvenida.insertAdjacentElement("afterend", bloque);
+
+            // Ya se muestran aquí: se oculta la zona de comunicados de arriba
+            document.getElementById("seccionComunicados").style.display = "none";
+        } else if (personales.length) {
+            // Respaldo: si no hay bienvenida en pantalla, van arriba como antes
+            const contenedor = document.getElementById("listaComunicados");
+            contenedor.innerHTML =
+                personales.map(c => htmlTarjetaComunicado(c, true)).join("") + contenedor.innerHTML;
+            document.getElementById("seccionComunicados").style.display = "block";
+        }
 
         // Registra la vista de cada comunicado personal que se acaba
         // de mostrar -- a la segunda vez, se desactiva solo (ver
@@ -2117,8 +2233,12 @@ function mostrarComunicadosPersonales(personales) {
             }).catch(() => {}); // si falla, no debe romper el portal
         });
 
+        if (conVentana && bienvenida) {
+            mostrarVentanaComunicados(personales, generales);
+        }
+
     } catch (error) {
-        console.error("No se pudieron mostrar los comunicados personales:", error);
+        console.error("No se pudieron mostrar los comunicados:", error);
     }
 
 }
@@ -2128,11 +2248,15 @@ function mostrarComunicadosPersonales(personales) {
   portal, sin necesidad de consultar su crédito. Usa la misma clave
   publicable (RLS ya limita a solo los comunicados activos).
 */
+// Comunicados generales ya descargados (null = todavía no se han cargado)
+let comunicadosGeneralesActuales = null;
+
 async function cargarComunicados() {
 
     try {
 
         const comunicados = await listarComunicadosPublicos();
+        comunicadosGeneralesActuales = comunicados;
 
         if (!comunicados.length) return;
 

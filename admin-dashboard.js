@@ -208,8 +208,6 @@ function filtrarPorPeriodo(lista, campoFecha, periodo) {
 }
 
 async function cargarDatos() {
-    const clienteAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
     // Las 5 consultas son independientes entre sí -- "Creditos_Anulados"
     // antes se pedía después de las otras 4, agregando un viaje de red
     // extra en cada carga sin necesidad. Ahora las 5 van en paralelo.
