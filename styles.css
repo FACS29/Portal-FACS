@@ -1514,3 +1514,37 @@ body.oscuro .btn-secundario:hover {
     text-align: center;
 }
 
+
+/*=========================================
+  AJUSTE PARA CELULARES: ENCABEZADO
+  (pegar AL FINAL de styles.css)
+=========================================*/
+
+/* El título "SINTRAPROACEITES" es una sola palabra larga: no se puede partir,
+   así que en pantallas angostas se reduce la letra para que quepa.
+   En pantallas de ~480px o más queda igual que antes (34px). */
+header h1{
+    font-size: clamp(18px, calc((100vw - 40px) / 13), 34px);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+/* Que la fecha de actualización pueda partirse en dos líneas sin salirse */
+header .actualizacion{
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px){
+    header{
+        padding: 22px 16px;
+    }
+    header h2{
+        font-size: 18px;
+    }
+    header h3{
+        font-size: 17px;
+    }
+    .logo{
+        width: 100px;
+    }
+}
