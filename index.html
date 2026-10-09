@@ -8,26 +8,31 @@
 
     <title>Portal del Afiliado - FACS</title>
 
+    <meta name="description" content="Consulte en linea la informacion actualizada de sus creditos del Fondo de Ahorro y Credito Sindical (FACS) de Sintraproaceites La Gloria.">
+    <meta name="theme-color" content="#006633">
+    <link rel="icon" type="image/png" href="logo.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css?v=2">
+    <link rel="stylesheet" href="styles.css?v=5">
 
 </head>
 
 <body>
 
-<button id="btnModoOscuro" class="btn-modo-oscuro" title="Cambiar a modo oscuro">🌙</button>
+<button id="btnModoOscuro" class="btn-modo-oscuro" title="Cambiar a modo oscuro" aria-label="Cambiar entre modo claro y modo oscuro">🌙</button>
 
-<button id="btnVolverArriba" class="btn-volver-arriba" title="Volver arriba">↑</button>
+<button id="btnVolverArriba" class="btn-volver-arriba" title="Volver arriba" aria-label="Volver arriba">↑</button>
 
 <header>
 
-    <img src="logo.png" class="logo">
+    <img src="logo.png" class="logo" alt="Logo de Sintraproaceites La Gloria">
 
     <h1>SINTRAPROACEITES LA GLORIA</h1>
 
-    <h2>Fondo de Ahorro y Crédito Sindical (FACS)  </h2>
+    <h2>Fondo de Ahorro y Crédito Sindical (FACS)</h2>
 
     <h3>Portal del Afiliado</h3>
 
@@ -37,7 +42,7 @@
 
         <span id="ultimaActualizacion">
 
-            Información no disponible
+            Cargando…
 
         </span>
 
@@ -47,6 +52,10 @@
 
 
 <main class="contenedor">
+
+    <noscript>
+        <div class="aviso-noscript">Este portal necesita JavaScript activado en su navegador para funcionar.</div>
+    </noscript>
 
     <!-- Comunicados del Fondo -->
     <section id="seccionComunicados" style="display:none">
@@ -87,13 +96,15 @@
                 id="documento"
                 inputmode="numeric"
                 autocomplete="off"
-                placeholder="Ingrese su número de documento">
+                placeholder="Ingrese su número de documento"
+                aria-label="Número de documento">
 
             <input
                 type="password"
                 id="contrasena"
                 autocomplete="off"
                 placeholder="Ingrese su contraseña"
+                aria-label="Contraseña"
                 style="display:none;">
 
             <button id="btnConsultar">
@@ -102,14 +113,14 @@
 
             </button>
 
-            <div id="linkRecuperacion" style="display: none; margin-top: 10px; text-align: center;">
-                <p style="color: #ff6600; font-size: 14px; margin: 5px 0;">
+            <div id="linkRecuperacion" class="link-recuperacion" style="display: none;">
+                <p class="link-recuperacion-texto">
                     ¿Olvidaste tu contraseña? 
-                    <a href="#" id="enlaceRecuperarContraseña" style="color: #0066cc; text-decoration: underline; font-weight: bold;">Recuperar aquí</a>
+                    <a href="#" id="enlaceRecuperarContraseña">Recuperar aquí</a>
                 </p>
             </div>
 
-            <div id="errorConsulta" class="mensaje-error" style="display:none"></div>
+            <div id="errorConsulta" class="mensaje-error" style="display:none" role="alert"></div>
 
         </div>
 
@@ -121,29 +132,29 @@
 
 <!-- Modal Primera Configuración -->
 <div id="modalPrimeraConfiguracion" class="modal-fondo" style="display:none">
-    <div class="modal-caja">
-        <h2>🔐 Primera Configuración</h2>
+    <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="tituloPrimeraConfig">
+        <h2 id="tituloPrimeraConfig">🔐 Primera Configuración</h2>
         <p>Por favor configura tu contraseña y pregunta de seguridad para acceder.</p>
         <form id="formPrimeraConfiguracion">
             <div class="campo-modal">
-                <label>Nueva Contraseña: <span class="obligatorio">*</span></label>
+                <label for="nuevaContrasena">Nueva Contraseña: <span class="obligatorio">*</span></label>
                 <div class="campo-contraseña">
                     <input type="password" id="nuevaContrasena" required>
-                    <button type="button" class="btn-mostrar-contraseña" onclick="toggleMostrarContraseña('nuevaContrasena')">👁️</button>
+                    <button type="button" class="btn-mostrar-contraseña" title="Mostrar u ocultar contraseña" aria-label="Mostrar u ocultar contraseña" onclick="toggleMostrarContraseña('nuevaContrasena')">👁️</button>
                 </div>
-                <small style="display:block; color:#666; margin-top:4px;">Mínimo 8 caracteres.</small>
+                <small class="nota-campo">Mínimo 8 caracteres.</small>
             </div>
 
             <div class="campo-modal">
-                <label>Repetir Contraseña: <span class="obligatorio">*</span></label>
+                <label for="repiteContrasena">Repetir Contraseña: <span class="obligatorio">*</span></label>
                 <div class="campo-contraseña">
                     <input type="password" id="repiteContrasena" required>
-                    <button type="button" class="btn-mostrar-contraseña" onclick="toggleMostrarContraseña('repiteContrasena')">👁️</button>
+                    <button type="button" class="btn-mostrar-contraseña" title="Mostrar u ocultar contraseña" aria-label="Mostrar u ocultar contraseña" onclick="toggleMostrarContraseña('repiteContrasena')">👁️</button>
                 </div>
             </div>
 
             <div class="campo-modal">
-                <label>Pregunta de Seguridad: <span class="obligatorio">*</span></label>
+                <label for="preguntaSecreta">Pregunta de Seguridad: <span class="obligatorio">*</span></label>
                 <select id="preguntaSecreta" required>
                     <option value="">Selecciona una pregunta</option>
                     <option value="1">¿Cómo se llamaba tu mejor amigo o amiga de la infancia?</option>
@@ -156,12 +167,12 @@
             </div>
 
             <div class="campo-modal">
-                <label>Tu Respuesta: <span class="obligatorio">*</span></label>
-                <input type="text" id="respuestaSecreta" required autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform: uppercase;">
-                <small style="display:block; color:#666; margin-top:4px;">Se escribe en MAYÚSCULAS y sin tildes. Recuerda cómo la escribiste.</small>
+                <label for="respuestaSecreta">Tu Respuesta: <span class="obligatorio">*</span></label>
+                <input type="text" id="respuestaSecreta" required autocomplete="off" autocapitalize="characters" spellcheck="false" class="entrada-mayusculas">
+                <small class="nota-campo">Se escribe en MAYÚSCULAS y sin tildes. Recuerda cómo la escribiste.</small>
             </div>
 
-            <div id="errorConfig" class="mensaje-error-modal" style="display:none"></div>
+            <div id="errorConfig" class="mensaje-error-modal" style="display:none" role="alert"></div>
 
             <div class="modal-botones">
                 <button type="submit" class="btn-primario">Guardar</button>
@@ -173,32 +184,32 @@
 
 <!-- Modal Recuperación -->
 <div id="modalRecuperacion" class="modal-fondo" style="display:none">
-    <div class="modal-caja">
-        <h2>🔑 Recuperar Contraseña</h2>
+    <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="tituloRecuperar">
+        <h2 id="tituloRecuperar">🔑 Recuperar Contraseña</h2>
         <form id="formRecuperacion">
             <div class="campo-modal">
-                <label id="textoPreguntaSecreta" style="font-weight: bold;"></label>
-                <input type="text" id="respuestaRecuperacion" required autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform: uppercase;">
-                <small style="display:block; color:#666; margin-top:4px;">En MAYÚSCULAS y sin tildes.</small>
+                <label id="textoPreguntaSecreta" class="etiqueta-pregunta" for="respuestaRecuperacion"></label>
+                <input type="text" id="respuestaRecuperacion" required autocomplete="off" autocapitalize="characters" spellcheck="false" class="entrada-mayusculas">
+                <small class="nota-campo">En MAYÚSCULAS y sin tildes.</small>
             </div>
 
             <div class="campo-modal">
-                <label>Nueva Contraseña: <span class="obligatorio">*</span></label>
+                <label for="nuevaContrasena2">Nueva Contraseña: <span class="obligatorio">*</span></label>
                 <div class="campo-contraseña">
                     <input type="password" id="nuevaContrasena2" required>
-                    <button type="button" class="btn-mostrar-contraseña" onclick="toggleMostrarContraseña('nuevaContrasena2')">👁️</button>
+                    <button type="button" class="btn-mostrar-contraseña" title="Mostrar u ocultar contraseña" aria-label="Mostrar u ocultar contraseña" onclick="toggleMostrarContraseña('nuevaContrasena2')">👁️</button>
                 </div>
             </div>
 
             <div class="campo-modal">
-                <label>Repetir Contraseña: <span class="obligatorio">*</span></label>
+                <label for="repiteContrasena2">Repetir Contraseña: <span class="obligatorio">*</span></label>
                 <div class="campo-contraseña">
                     <input type="password" id="repiteContrasena2" required>
-                    <button type="button" class="btn-mostrar-contraseña" onclick="toggleMostrarContraseña('repiteContrasena2')">👁️</button>
+                    <button type="button" class="btn-mostrar-contraseña" title="Mostrar u ocultar contraseña" aria-label="Mostrar u ocultar contraseña" onclick="toggleMostrarContraseña('repiteContrasena2')">👁️</button>
                 </div>
             </div>
 
-            <div id="errorRecupera" class="mensaje-error-modal" style="display:none"></div>
+            <div id="errorRecupera" class="mensaje-error-modal" style="display:none" role="alert"></div>
 
             <div class="modal-botones">
                 <button type="submit" class="btn-primario">Cambiar Contraseña</button>
@@ -210,17 +221,17 @@
 
 <!-- Modal Solicitar Reset -->
 <div id="modalSolicitarReset" class="modal-fondo" style="display:none">
-    <div class="modal-caja">
-        <h2>🔐 Restablecer Acceso</h2>
+    <div class="modal-caja" role="dialog" aria-modal="true" aria-labelledby="tituloRestablecer">
+        <h2 id="tituloRestablecer">🔐 Restablecer Acceso</h2>
         <p>Has excedido el máximo de intentos. Se ha enviado una solicitud al comité para restablecer tu contraseña.</p>
         <p><strong>Para recuperar tu acceso:</strong></p>
-        <ul style="text-align: left; margin: 15px auto; max-width: 300px; color: #333;">
+        <ul class="lista-contacto">
             <li>📱 <strong>Contacta al comité administrativo</strong> por teléfono o WhatsApp</li>
             <li>📧 Menciona tu documento de identidad</li>
             <li>⏱️ Ellos restablecerán tu contraseña en pocos minutos</li>
         </ul>
         
-        <div style="text-align:center; margin-top:20px;">
+        <div class="modal-centro">
             <button id="btnCerrarSolicitud" class="btn-primario">Entendido</button>
         </div>
     </div>
@@ -230,26 +241,10 @@
 
     <!-- Resultado -->
 
-    <section id="resultado">
+    <section id="resultado" aria-live="polite">
 
     </section>
 
-
-    <!-- Nueva Consulta -->
-
-    <div
-        id="contenedorNuevaConsulta"
-        style="display:none; text-align:center; margin-bottom:35px;">
-
-        <button
-            id="btnNuevaConsulta"
-            class="btn-nueva">
-
-            🔍 NUEVA CONSULTA
-
-        </button>
-
-    </div>
 
 </main>
 
@@ -269,7 +264,7 @@
 
     </p>
 
-    <p style="margin-top:15px;font-size:12px;">
+    <p class="creditos-portal">
 
         Portal diseñado y desarrollado por:<br>
 
@@ -295,7 +290,7 @@
 
 <script src="modo-oscuro.js"></script>
 <script src="supabase.js"></script>
-<script src="script.js?v=3"></script>
+<script src="script.js?v=4"></script>
 
 </body>
 

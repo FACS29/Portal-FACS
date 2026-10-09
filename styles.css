@@ -1548,3 +1548,512 @@ header .actualizacion{
         width: 100px;
     }
 }
+
+/*=========================================
+  MEJORAS VISUALES - ETAPA 1
+  (pegar AL FINAL de styles.css; solo agrega, no borra nada)
+  Para volver atras: borrar este bloque completo.
+=========================================*/
+
+/* ---------- Colores de marca ---------- */
+:root{
+    --facs-verde: #006633;
+    --facs-verde-oscuro: #004d24;
+    --facs-dorado: #C99B3F;
+}
+
+/* ---------- Fondo de la pagina (suave) ---------- */
+body{
+    background: linear-gradient(180deg, #e8f0eb 0, #f2f5f8 320px);
+    background-attachment: scroll;
+    line-height: 1.5;
+}
+
+/* ---------- Encabezado: franja de marca ---------- */
+header{
+    border-top: 6px solid var(--facs-verde);
+    background: linear-gradient(180deg, #ffffff 0%, #f7faf8 100%);
+}
+header h3{
+    display: inline-block;
+    margin-top: 6px;
+    padding: 4px 16px;
+    border-radius: 999px;
+    background: #eaf8ef;
+    color: var(--facs-verde);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+/* ---------- Portada ---------- */
+.busqueda{
+    border: 1px solid #e3ebe6;
+}
+.portada-titulo{
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+}
+.portada-beneficios{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px 28px;
+    padding: 22px 26px;
+}
+.portada-beneficios div{
+    margin: 6px 0;
+    font-size: 16px;
+}
+@media (max-width: 640px){
+    .portada-beneficios{
+        grid-template-columns: 1fr;
+        padding: 16px 18px;
+    }
+    .portada-titulo{
+        font-size: 26px;
+    }
+}
+
+/* ---------- Campos y botones: foco claro ---------- */
+.busqueda input,
+.campo-modal input,
+.campo-modal select{
+    transition: border-color .2s, box-shadow .2s;
+}
+.busqueda input:focus,
+.campo-modal input:focus,
+.campo-modal select:focus{
+    outline: none;
+    border-color: var(--facs-verde);
+    box-shadow: 0 0 0 4px rgba(0, 102, 51, .15);
+}
+button:focus-visible,
+a:focus-visible{
+    outline: 3px solid var(--facs-dorado);
+    outline-offset: 2px;
+}
+.busqueda button,
+.btn-primario,
+.btn-nueva{
+    box-shadow: 0 4px 12px rgba(0, 102, 51, .25);
+}
+.busqueda button:active,
+.btn-primario:active,
+.btn-nueva:active{
+    transform: translateY(1px);
+}
+
+/* ---------- Ventanas (modales) ---------- */
+.modal-fondo{
+    padding: 12px;
+    backdrop-filter: blur(2px);
+}
+.modal-caja{
+    max-height: 90vh;          /* que no se corte en celulares bajitos */
+    overflow-y: auto;
+    border-top: 5px solid var(--facs-verde);
+    animation: modalEntrar .25s ease;
+}
+@keyframes modalEntrar{
+    from{ opacity: 0; transform: translateY(12px) scale(.98); }
+    to{ opacity: 1; transform: none; }
+}
+.campo-modal input,
+.campo-modal select{
+    padding: 12px;
+    border-radius: 8px;
+}
+
+/* ---------- Pie de pagina ---------- */
+footer{
+    margin-top: 30px;
+    border-top: 1px solid #e3e9e5;
+    line-height: 1.6;
+}
+.enlace-admin{
+    font-size: 12px;
+    color: #8a8a8a;
+}
+
+/* ---------- Pantallas tactiles: sin "saltos" al tocar ---------- */
+@media (hover: none){
+    .card:hover,
+    .item:hover{
+        transform: none;
+    }
+}
+
+/* ---------- Respeta a quien pide menos animacion ---------- */
+@media (prefers-reduced-motion: reduce){
+    *{
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/*=========================================
+  MODO OSCURO: correcciones de contraste
+=========================================*/
+body.oscuro{
+    background: #0B1F17;
+}
+body.oscuro header{
+    border-top-color: #0B4228;
+    background: #14261D;
+}
+body.oscuro header h1,
+body.oscuro .portada-titulo{
+    color: #8CF2B6;
+}
+body.oscuro header h3{
+    background: #0B4228;
+    color: #8CF2B6;
+}
+body.oscuro .actualizacion,
+body.oscuro .portada-subtitulo{
+    color: #B8C9BF;
+}
+body.oscuro .busqueda{
+    border-color: #1F3A2C;
+}
+body.oscuro .busqueda input{
+    background: #0B1F17;
+    color: #E4EBE6;
+    border-color: #2A4A38;
+}
+body.oscuro input::placeholder{
+    color: #7A9184;
+}
+body.oscuro #linkRecuperacion a{
+    color: #8CF2B6 !important;     /* el HTML trae un azul fijo */
+}
+
+/* Ventanas en modo oscuro: misma paleta verde que el resto */
+body.oscuro .modal-caja{
+    background: #14261D;
+    color: #E4EBE6;
+    border-top-color: #2A6B4A;
+}
+body.oscuro .campo-modal input,
+body.oscuro .campo-modal select{
+    background: #0B1F17;
+    color: #E4EBE6;
+    border-color: #2A4A38;
+}
+body.oscuro .modal-caja small{
+    color: #9FB5A8 !important;     /* el HTML trae un gris fijo */
+}
+body.oscuro .modal-caja ul{
+    color: #E4EBE6 !important;     /* el HTML trae un gris oscuro fijo */
+}
+body.oscuro .mensaje-error-modal{
+    color: #FFB4A9;
+}
+body.oscuro footer{
+    border-top-color: #1F3A2C;
+}
+body.oscuro .enlace-admin{
+    color: #7A9184;
+}
+
+/*=========================================
+  MEJORAS VISUALES - ETAPA 2
+  (clases que reemplazan estilos escritos en index.html)
+  Para volver atras: borrar este bloque y usar el index.html anterior.
+=========================================*/
+
+.nota-campo{
+    display: block;
+    color: #666;
+    margin-top: 4px;
+    font-size: 13px;
+}
+.campo-modal .etiqueta-pregunta{
+    font-weight: 700;
+}
+.campo-modal .entrada-mayusculas{
+    text-transform: uppercase;
+}
+.modal-caja .lista-contacto{
+    text-align: left;
+    margin: 15px auto;
+    max-width: 300px;
+    color: #333;
+}
+.modal-caja .modal-centro{
+    text-align: center;
+    margin-top: 20px;
+}
+.link-recuperacion{
+    margin-top: 10px;
+    text-align: center;
+}
+.link-recuperacion .link-recuperacion-texto{
+    color: #c2410c;
+    font-size: 14px;
+    margin: 5px 0;
+}
+.link-recuperacion .link-recuperacion-texto a{
+    color: #0066cc;
+    text-decoration: underline;
+    font-weight: bold;
+}
+.contenedor-nueva-consulta{
+    text-align: center;
+    margin-bottom: 35px;
+}
+footer .creditos-portal{
+    margin-top: 15px;
+    font-size: 12px;
+}
+.aviso-noscript{
+    margin: 20px 0;
+    padding: 16px 18px;
+    border-radius: 10px;
+    background: #fff4e5;
+    border: 1px solid #f0c987;
+    color: #7a4a00;
+    text-align: center;
+}
+
+/* ---------- Modo oscuro (Etapa 2) ---------- */
+body.oscuro .nota-campo{
+    color: #9FB5A8;
+}
+body.oscuro .modal-caja .lista-contacto{
+    color: #E4EBE6;
+}
+body.oscuro .link-recuperacion .link-recuperacion-texto{
+    color: #FFB27A;
+}
+body.oscuro .link-recuperacion .link-recuperacion-texto a{
+    color: #8CF2B6;
+}
+body.oscuro .aviso-noscript{
+    background: #3a2a10;
+    border-color: #6b4e1c;
+    color: #FFD9A0;
+}
+
+/*=========================================
+  MEJORAS VISUALES - ETAPA 3
+  (pantalla de resultados del credito; solo CSS)
+  Para volver atras: borrar este bloque completo.
+=========================================*/
+
+/* ---------- Tarjetas: sin "saltitos" al pasar el mouse ---------- */
+.card:hover{
+    transform: none;
+}
+
+/* ---------- Legibilidad ---------- */
+.etiqueta{
+    color: #5f6f65;               /* antes #888: poco contraste */
+}
+.valor,
+td,
+th{
+    font-variant-numeric: tabular-nums;   /* cifras alineadas */
+}
+
+/* ---------- Bienvenida ---------- */
+.card.bienvenida{
+    border-top: 5px solid var(--facs-verde);
+}
+.bienvenida-nombre{
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+    overflow-wrap: anywhere;      /* nombres largos no desbordan en celular */
+}
+
+/* ---------- Estado del credito ---------- */
+.estado{
+    padding: 22px 20px;
+    border: 1px solid transparent;
+}
+.estado-vigente{ border-color: #bfe6cc; }
+.estado-paz{ border-color: #c5d5fb; }
+.estado-anulado{ border-color: #d4d4d4; color: #444; }
+.estado-valor{
+    letter-spacing: .01em;
+}
+
+/* ---------- Titulos de seccion: subrayado de marca ---------- */
+.seccion h2{
+    position: relative;
+    border-bottom: none;
+    padding-bottom: 12px;
+    font-family: "Fraunces", serif;
+    font-weight: 600;
+}
+.seccion h2::after{
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #006633 0, #006633 64px, #dbe6df 64px);
+}
+
+/* ---------- Saldo destacado ---------- */
+.saldo-destacado{
+    box-shadow: 0 6px 18px rgba(0, 102, 51, .14);
+}
+.saldo-destacado .etiqueta{
+    color: #006633;
+}
+.saldo-destacado .valor{
+    font-size: 26px;
+}
+
+/* ---------- Barra de amortizacion ---------- */
+.progreso{
+    height: 16px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, .10);
+}
+.desglose-progreso{
+    flex-wrap: wrap;
+    row-gap: 6px;
+}
+
+/* ---------- Tablas ---------- */
+td:first-child{
+    font-weight: 600;
+}
+th{
+    line-height: 1.3;
+}
+@media (hover: hover){
+    tr:not(.fila-totales):hover td{
+        background: #e9f4ee;
+    }
+}
+
+/* ---------- Celulares ---------- */
+@media (max-width: 480px){
+    .card{
+        padding: 20px 16px;
+    }
+    .card.bienvenida{
+        padding: 26px 16px;
+    }
+    .bienvenida-saludo{ font-size: 18px; }
+    .bienvenida-nombre{ font-size: 26px; }
+    .bienvenida-mensaje{ font-size: 16px; }
+    .estado-valor{ font-size: 22px; }
+    .seccion h2{ font-size: 20px; }
+    .item{ padding: 14px; }
+    .valor{ font-size: 16px; }
+    .saldo-destacado .valor{ font-size: 24px; }
+}
+
+/*=========================================
+  MODO OSCURO (Etapa 3)
+=========================================*/
+body.oscuro .card.bienvenida{
+    border-top-color: #2A8F5C;
+}
+body.oscuro .bienvenida-nombre{
+    color: #8CF2B6;
+}
+body.oscuro .estado-vigente{ border-color: #1b6b47; }
+body.oscuro .estado-paz{ border-color: #24468a; }
+body.oscuro .estado-anulado{ border-color: #444; }
+body.oscuro .seccion h2::after{
+    background: linear-gradient(90deg, #3FA36C 0, #3FA36C 64px, #1F3A2C 64px);
+}
+body.oscuro .saldo-destacado{
+    background: #0B4228;
+    border: 2px solid #2A8F5C;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+}
+body.oscuro .saldo-destacado .etiqueta{
+    color: #BFF0D3;
+}
+body.oscuro .saldo-destacado .valor{
+    color: #8CF2B6;
+}
+body.oscuro .progreso{
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, .5);
+}
+/* El porcentaje de amortizacion trae un verde oscuro fijo escrito en script.js */
+body.oscuro .valor[style*="006633"]{
+    color: #8CF2B6 !important;
+}
+@media (hover: hover){
+    body.oscuro tr:not(.fila-totales):hover td{
+        background: #1F3A2C;
+    }
+}
+
+/*=========================================
+  IMPRESION / GUARDAR COMO PDF
+  (el afiliado puede imprimir su consulta limpia, aunque este en modo oscuro)
+=========================================*/
+@media print{
+    *{
+        background: #fff !important;
+        color: #111 !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+        animation: none !important;
+        transition: none !important;
+    }
+    body{
+        font-size: 12px;
+    }
+    .btn-modo-oscuro,
+    .btn-volver-arriba,
+    .btn-nueva-consulta,
+    .btn-copiar-interno,
+    #contenedorNuevaConsulta,
+    .enlace-buzon,
+    .enlace-admin,
+    .pista-scroll,
+    .modal-fondo{
+        display: none !important;
+    }
+    .card,
+    .item,
+    .estado,
+    .saldo-destacado{
+        border: 1px solid #bbb !important;
+        transform: none !important;
+        break-inside: avoid;
+    }
+    .seccion{
+        break-inside: avoid;
+    }
+    .tabla-scroll{
+        overflow: visible !important;
+    }
+    table{
+        display: table !important;
+        white-space: normal !important;
+    }
+    tr{
+        break-inside: avoid;
+    }
+    th{
+        background: #006633 !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .progreso{
+        background: #e5ebe7 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .barra{
+        background: #006633 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .seccion h2::after{
+        background: #006633 !important;
+    }
+}

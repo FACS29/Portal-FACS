@@ -18,6 +18,13 @@ let historialActual = [];
 
 let creditoActual = null;
 
+const TEXTO_ACTUALIZACION_NO_DISPONIBLE = "No disponible por el momento";
+
+function mostrarUltimaActualizacion(texto) {
+    const elemento = document.getElementById("ultimaActualizacion");
+    if (elemento) elemento.textContent = texto;
+}
+
 async function cargarDatos() {
 
     // ANTES: esta función traía la tabla Creditos COMPLETA (todos los
@@ -42,15 +49,23 @@ async function cargarDatos() {
             window.fechaActualizacionReal =
                 configuracion[0].Ultima_Actualizacion;
 
-            document.getElementById(
-                "ultimaActualizacion"
-            ).textContent = fecha.toLocaleString(
-                "es-CO",
-                {
-                    day: "2-digit", month: "2-digit", year: "numeric",
-                    hour: "2-digit", minute: "2-digit", second: "2-digit"
-                }
+            // Si la fecha viene vacia o invalida se avisa en la pagina
+            // (antes se mostraba una fecha de 1969).
+            mostrarUltimaActualizacion(
+                (!configuracion[0].Ultima_Actualizacion || isNaN(fecha))
+                    ? TEXTO_ACTUALIZACION_NO_DISPONIBLE
+                    : fecha.toLocaleString(
+                        "es-CO",
+                        {
+                            day: "2-digit", month: "2-digit", year: "numeric",
+                            hour: "2-digit", minute: "2-digit", second: "2-digit"
+                        }
+                    )
             );
+
+        } else {
+
+            mostrarUltimaActualizacion(TEXTO_ACTUALIZACION_NO_DISPONIBLE);
 
         }
 
@@ -58,7 +73,8 @@ async function cargarDatos() {
 
         console.error(error);
 
-        alert("No fue posible conectar con Supabase.");
+        // Sin ventana emergente: el aviso queda dentro de la pagina.
+        mostrarUltimaActualizacion(TEXTO_ACTUALIZACION_NO_DISPONIBLE);
 
     }
 
@@ -296,7 +312,7 @@ function mostrarBienvenida(nombre, documento) {
             </div>
 
             <div class="bienvenida-nombre">
-                ${nombre}
+                ${escaparHtml(nombre)}
             </div>
 
             <div class="bienvenida-mensaje">
@@ -350,7 +366,7 @@ function construirDatosDeudor(
 
                 <div class="valor">
 
-                    ${nombreAfiliado || ""}
+                    ${escaparHtml(nombreAfiliado)}
 
                 </div>
 
