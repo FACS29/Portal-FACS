@@ -97,9 +97,7 @@ function escaparHtml(texto) {
 }
 
 function construirResumenCopiable(vigente, nombreAfiliado, documento, mesesGraciaYParciales) {
-    const documentoFormateado = Number.isFinite(Number(documento))
-        ? Number(documento).toLocaleString("es-CO")
-        : documento;
+    const documentoFormateado = formatoDocumento(documento);
 
     const lineas = [
         `Nombre: ${nombreAfiliado || ""}`,
@@ -1309,7 +1307,7 @@ const textoParaCopiar = esConsultaInterna
     ? construirResumenCopiable(vigente, nombreAfiliado, documento, cronograma.mesesGraciaYParciales)
     : "";
 
-let html = `
+let html = construirResumenCredito(vigente, porcentaje) + `
 
 <div class="card">
 
@@ -1498,6 +1496,8 @@ html += `
 <div class="card">
 
     <h2>Historial de Créditos del Afiliado</h2>
+    <p class="historial-ayuda">Use el ícono de documento, junto al estado, para descargar el PDF de cada crédito.</p>
+    <div id="mensajePdfCredito" class="mensaje-pdf" role="status" aria-live="polite" style="display:none"></div>
 
     <div class="pista-scroll">↔ Desliza para ver más</div>
 
@@ -1551,7 +1551,19 @@ registros.forEach(r => {
 
         <td>${r["Cuotas Re"] || ""}</td>
 
-        <td>${r["Estado"] || ""}</td>
+        <td>
+            <div class="estado-con-pdf">
+                <span>${escaparHtml(r["Estado"] || "")}</span>
+                <button
+                    type="button"
+                    class="btn-pdf-credito"
+                    data-codigo="${escaparHtml(String(r["Codigo Credito"] || "")).replace(/"/g, "&quot;")}"
+                    title="Descargar PDF del crédito ${escaparHtml(formatoCodigoCredito(r["Codigo Credito"]))}"
+                    aria-label="Descargar PDF del crédito ${escaparHtml(formatoCodigoCredito(r["Codigo Credito"]))}">
+                    ${ICONO_PDF}
+                </button>
+            </div>
+        </td>
 
     </tr>
 
@@ -1565,6 +1577,12 @@ html += `
 </div>
 `;
 
+contextoPdf = {
+    registros,
+    pagos: datosPortal.pagos || [],
+    nombre: nombreAfiliado,
+    documento
+};
 resultado.innerHTML =
     mostrarBienvenida(nombreAfiliado, documento) +
     html +
@@ -1587,6 +1605,7 @@ resultado.innerHTML =
 
  `;
 
+instalarDescargaPdf();
 const textoUltimaConsulta =
     document.getElementById(
         "ultimaConsultaUsuario"
@@ -2097,7 +2116,13 @@ html += `
 return {
     html,
     mesesGracia: mesesGraciaCompleta,
-    mesesGraciaYParciales: mesesGraciaCompleta + mesesPagoParcial * 0.5
+    mesesGraciaYParciales: mesesGraciaCompleta + mesesPagoParcial * 0.5,
+    // Datos de las filas: los usa el PDF para que salga igual que el portal.
+    filas,
+    totalCapital,
+    totalInteres,
+    totalCuota,
+    cuotasExtra
 };
 
 }
@@ -2109,6 +2134,382 @@ return {
   -- es el mismo modelo de confianza que ya tiene la consulta de
   créditos por documento (ver diagnóstico original).
 */
+// ======================================================
+// DOCUMENTO CON SEPARADORES, RESUMEN DEL CREDITO Y PDF POR CREDITO
+// ======================================================
+
+let contextoPdf = null;
+let pdfListenerInstalado = false;
+let logosPdfCache = null;
+// El logo del FACS es un archivo propio; el del sindicato NO: se toma de la misma
+// imagen que ya muestra el encabezado del portal (logo.png), sin duplicarla.
+const LOGOS_PDF = {
+    facs: "logo-facs-pdf.jpg?v=1"
+};
+const ICONO_PDF = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6"/><path d="M9.5 14.5 12 17l2.5-2.5"/></svg>`;
+
+// 1234567890 -> 1.234.567.890 (si trae letras u otros signos, se deja igual)
+function formatoDocumento(doc) {
+    const s = String(doc == null ? "" : doc).trim();
+    return /^\d+$/.test(s) ? s.replace(/\B(?=(\d{3})+(?!\d))/g, ".") : s;
+}
+
+// Miles con punto, siempre (tambien en cifras de 4 digitos). Se usa en el PDF.
+function milesPdf(valor) {
+    const x = Math.round(Number(valor) || 0);
+    return (x < 0 ? "-" : "") + String(Math.abs(x)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+// "vigente" | "paz" | "anulado", con el mismo criterio de obtenerEstadoCredito()
+function tipoCredito(estado) {
+    const clase = obtenerEstadoCredito(estado).clase;
+    if (clase === "estado-paz") return "paz";
+    if (clase === "estado-anulado") return "anulado";
+    return "vigente";
+}
+
+function porcentajeAmortizado(c) {
+    let p = parseFloat(
+        String(c["Porcentaje Amortizado"] || "0").replace("%", "").replace(",", ".")
+    ) || 0;
+    if (p <= 1) p = p * 100;
+    return p;
+}
+
+function textoPorcentajeComa(p) {
+    return (p === 100 ? "100" : p.toFixed(2).replace(".", ",")) + " %";
+}
+
+function textoTasaComa(valor) {
+    let numero = Number(valor || 0);
+    if (numero <= 1) numero *= 100;
+    return (numero === 100 ? "100" : numero.toFixed(2).replace(".", ",")) + " %";
+}
+
+function fechaActualizacionCorta() {
+    if (!window.fechaActualizacionReal) return "";
+    const f = new Date(String(window.fechaActualizacionReal).replace(" ", "T"));
+    if (isNaN(f)) return "";
+    return f.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+// Tarjeta "Resumen del Crédito", al inicio de la consulta (vigente, paz y salvo o anulado)
+function construirResumenCredito(c, porcentaje) {
+    const tipo = tipoCredito(c.Estado);
+    const info = obtenerEstadoCredito(c.Estado);
+    const codigo = formatoCodigoCredito(c["Codigo Credito"]);
+    const pagadas = Number(c["Cuotas Pagadas"] || 0);
+    const pactadas = Number(c["Cuotas Pactadas"] || 0);
+    const pct = Math.max(0, Math.min(100, Number(porcentaje) || 0));
+    const fechaAct = fechaActualizacionCorta();
+    let cuerpo = "";
+
+    if (tipo === "paz") {
+        const totalPagado = Number(c["Capital Pagado"] || 0) + Number(c["Interes Pagado"] || 0);
+        cuerpo = `
+            <div class="resumen-titulo">Crédito cancelado</div>
+            <p class="resumen-texto">No hay saldo pendiente en este crédito.</p>
+            <div class="progreso"><div class="barra" style="width:100%"></div></div>
+            <div class="resumen-barra-texto">
+                <span>${pagadas} de ${pactadas} cuotas pagadas</span>
+                <span>100% amortizado</span>
+            </div>
+            <div class="grid resumen-grid">
+                <div class="item">
+                    <div class="etiqueta">Último Pago</div>
+                    <div class="valor">${escaparHtml(c["Ultimo Pago"] || "-")}</div>
+                </div>
+                <div class="item">
+                    <div class="etiqueta">Total Pagado</div>
+                    <div class="valor">${formatoMoneda(totalPagado)}</div>
+                </div>
+            </div>`;
+    } else if (tipo === "anulado") {
+        cuerpo = `
+            <div class="resumen-titulo">Crédito anulado</div>
+            <p class="resumen-texto">Este crédito figura como anulado. Para más información, comuníquese con el comité.</p>
+            <div class="grid resumen-grid">
+                <div class="item">
+                    <div class="etiqueta">Fecha de Inicio</div>
+                    <div class="valor">${escaparHtml(c["Fecha Inicial"] || "-")}</div>
+                </div>
+                <div class="item">
+                    <div class="etiqueta">Valor del Crédito</div>
+                    <div class="valor">${formatoMoneda(c["Valor Credito"])}</div>
+                </div>
+            </div>`;
+    } else {
+        cuerpo = `
+            <div class="resumen-saldo">
+                <div class="etiqueta">Saldo de Capital Pendiente</div>
+                <div class="resumen-saldo-valor">${formatoMoneda(c["Saldo Capital"])}</div>
+            </div>
+            <div class="progreso"><div class="barra" style="width:${pct}%"></div></div>
+            <div class="resumen-barra-texto">
+                <span>${pagadas} de ${pactadas} cuotas pagadas</span>
+                <span>${pct === 100 ? "100" : pct.toFixed(2)}% amortizado</span>
+            </div>
+            <div class="grid resumen-grid">
+                <div class="item">
+                    <div class="etiqueta">Próxima Cuota</div>
+                    <div class="valor">${escaparHtml(c["Proximo Pago"] || "-")}</div>
+                </div>
+                <div class="item">
+                    <div class="etiqueta">Valor de la Cuota</div>
+                    <div class="valor">${formatoMoneda(c["Cuota"])}</div>
+                </div>
+            </div>`;
+    }
+
+    return `
+    <div class="card resumen-credito">
+        <div class="seccion">
+            <h2>Resumen del Crédito</h2>
+            <div class="resumen-cabecera">
+                <span class="resumen-insignia resumen-insignia-${tipo}">${info.icono} ${escaparHtml(c.Estado || "")}</span>
+                <span class="resumen-codigo">Crédito ${escaparHtml(codigo)}</span>
+            </div>
+            ${cuerpo}
+            ${fechaAct ? `<div class="resumen-actualizacion">Datos actualizados: ${fechaAct}</div>` : ""}
+        </div>
+    </div>
+    `;
+}
+
+// ---------- PDF del credito ----------
+
+function fechaDDMMAAAA(f) {
+    return `${String(f.getDate()).padStart(2, "0")}/${String(f.getMonth() + 1).padStart(2, "0")}/${f.getFullYear()}`;
+}
+
+function estadoFilaPdf(estado) {
+    const e = String(estado || "");
+    if (e.includes("Cancelado")) return "cancelado";
+    if (e.includes("Parcial")) return "parcial";
+    if (e.includes("Gracia")) return "gracia";
+    if (e.includes("Pagada")) return "pagada";
+    return "pendiente";
+}
+
+function construirDatosPdf(c, ctx) {
+    const tipo = tipoCredito(c.Estado);
+    const dinero = v => "$ " + milesPdf(v);
+    const texto = v => (v === null || v === undefined || v === "") ? "-" : String(v);
+    const estadoTexto = String(c.Estado || "").trim();
+    const fechaDatos = window.fechaActualizacionReal
+        ? new Date(String(window.fechaActualizacionReal).replace(" ", "T"))
+        : null;
+
+    const datos = {
+        codigo: formatoCodigoCredito(c["Codigo Credito"]),
+        tipo,
+        estadoTexto: (estadoTexto && estadoTexto.length <= 20)
+            ? estadoTexto
+            : (tipo === "paz" ? "Paz y Salvo" : tipo === "anulado" ? "Anulado" : "Vigente"),
+        nombre: ctx.nombre || "",
+        documento: formatoDocumento(ctx.documento),
+        generado: new Date().toLocaleString("es-CO", {
+            timeZone: "America/Bogota",
+            day: "numeric", month: "long", year: "numeric",
+            hour: "numeric", minute: "2-digit", hour12: true
+        }).replace(/[\u00A0\u202F]/g, " ") + " (hora de Colombia)",
+        datosAl: (fechaDatos && !isNaN(fechaDatos))
+            ? fechaDatos.toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" })
+            : "la última actualización del Fondo"
+    };
+
+    if (tipo === "anulado") {
+        datos.tiles = [
+            ["Fecha de inicio", texto(c["Fecha Inicial"])],
+            ["Valor del crédito", dinero(c["Valor Credito"])],
+            ["Cuotas pactadas", texto(c["Cuotas Pactadas"])]
+        ];
+        datos.notaAnulado = "Este crédito figura como anulado en los registros del Fondo. Para más información, comuníquese con el comité.";
+        return datos;
+    }
+
+    // El cronograma sale de la MISMA funcion que usa el portal en pantalla.
+    const pagosCredito = (ctx.pagos || [])
+        .filter(p => p.Codigo_Credito === c["Codigo Credito"])
+        .sort((a, b) => Number(a.Numero_cuota) - Number(b.Numero_cuota));
+    const cron = construirTablaAmortizacion(
+        c,
+        pagosCredito,
+        window.fechaActualizacionReal || new Date().toISOString()
+    );
+    datos.filas = cron.filas.map(f => ({
+        n: f.numeroCuota,
+        f: fechaDDMMAAAA(f.fechaCuota),
+        est: estadoFilaPdf(f.estado),
+        pago: !!f.pago,
+        si: f.pago ? Number(f.pago.Saldo_Inicial || 0) : 0,
+        cap: f.pago ? Number(f.pago.Capital_Pagado || 0) : 0,
+        int: f.pago ? Number(f.pago.Interes_Pagado || 0) : 0,
+        vc: f.pago ? Number(f.pago.Valor_Cuota || 0) : 0,
+        sf: f.pago ? Number(f.pago.Saldo_Final || 0) : 0
+    }));
+    datos.totales = { cap: cron.totalCapital, int: cron.totalInteres, vc: cron.totalCuota };
+    datos.notaGracia = cron.cuotasExtra > 0
+        ? `Nota: Este crédito registra ${formatearMeses(cron.mesesGraciaYParciales)} mes(es) de gracia y/o pagos parciales, situación que generó una ampliación del plazo inicialmente pactado.`
+        : null;
+
+    const pct = porcentajeAmortizado(c);
+    const cuotas = `${c["Cuotas Pagadas"] || 0} de ${c["Cuotas Pactadas"] || 0}`;
+    const tasa = textoTasaComa(c["Porcentaje Interes"]);
+
+    if (tipo === "paz") {
+        const total = Number(c["Capital Pagado"] || 0) + Number(c["Interes Pagado"] || 0);
+        datos.tiles = [
+            ["Fecha de inicio", texto(c["Fecha Inicial"])],
+            ["Fecha final", texto(c["Fecha Final"])],
+            ["Último pago", texto(c["Ultimo Pago"])],
+            ["Cuotas pagadas", cuotas],
+            ["Valor inicial desembolsado", dinero(c["Valor Desembolsado"])],
+            ["Valor total del crédito", dinero(c["Valor Credito"])],
+            ["Cuota mensual", dinero(c["Cuota"])],
+            ["Tasa de interés aplicada", tasa],
+            ["Capital pagado", dinero(c["Capital Pagado"])],
+            ["Intereses pagados", dinero(c["Interes Pagado"])],
+            ["Porcentaje amortizado", "100 %"],
+            ["Total pagado", dinero(total)]
+        ];
+        datos.franja = { izq: "Crédito cancelado · sin saldo pendiente", valor: "$ 0", pct: 100, textoPct: "100 %" };
+    } else {
+        datos.tiles = [
+            ["Fecha de inicio", texto(c["Fecha Inicial"])],
+            ["Fecha final", texto(c["Fecha Final"])],
+            ["Último pago", texto(c["Ultimo Pago"])],
+            ["Próximo pago", texto(c["Proximo Pago"])],
+            ["Valor inicial desembolsado", dinero(c["Valor Desembolsado"])],
+            ["Valor total del crédito", dinero(c["Valor Credito"])],
+            ["Cuota mensual", dinero(c["Cuota"])],
+            ["Tasa de interés aplicada", tasa],
+            ["Cuotas pagadas", cuotas],
+            ["Porcentaje amortizado", textoPorcentajeComa(pct)],
+            ["Capital pagado", dinero(c["Capital Pagado"])],
+            ["Intereses pagados", dinero(c["Interes Pagado"])]
+        ];
+        datos.franja = {
+            izq: "Saldo de capital pendiente",
+            valor: dinero(c["Saldo Capital"]),
+            pct,
+            textoPct: textoPorcentajeComa(pct)
+        };
+    }
+    return datos;
+}
+
+// Toma la imagen del encabezado (la misma ruta que ya usa la pagina), la pasa a JPEG
+// y la deja lista para el PDF. Si el navegador no puede (por ejemplo, al abrir la
+// pagina como archivo local sin servidor), devuelve null y el PDF sale sin ese logo.
+async function logoSindicatoComoJpeg() {
+    const origen = document.querySelector("img.logo");
+    const ruta = origen ? (origen.currentSrc || origen.src) : "logo.png";
+    const img = new Image();
+    await new Promise((ok, mal) => {
+        img.onload = ok;
+        img.onerror = () => mal(new Error("No se pudo cargar el logo del sindicato"));
+        img.src = ruta;
+    });
+    const lado = 320;
+    const lienzo = document.createElement("canvas");
+    lienzo.width = lado;
+    lienzo.height = lado;
+    const ctx = lienzo.getContext("2d");
+    ctx.fillStyle = "#ffffff";                     // el fondo transparente pasa a blanco
+    ctx.fillRect(0, 0, lado, lado);
+    const escala = Math.min(lado / img.naturalWidth, lado / img.naturalHeight);
+    const ancho = img.naturalWidth * escala;
+    const alto = img.naturalHeight * escala;
+    ctx.drawImage(img, (lado - ancho) / 2, (lado - alto) / 2, ancho, alto);
+    const blob = await new Promise((ok, mal) => {
+        lienzo.toBlob(
+            b => (b ? ok(b) : mal(new Error("No se pudo convertir el logo del sindicato"))),
+            "image/jpeg",
+            0.92
+        );
+    });
+    return new Uint8Array(await blob.arrayBuffer());
+}
+
+async function cargarLogosPdf() {
+    if (logosPdfCache) return logosPdfCache;
+    const [facs, sindicato] = await Promise.all([
+        fetch(LOGOS_PDF.facs)
+            .then(r => {
+                if (!r.ok) throw new Error("No se pudo cargar el logo del FACS");
+                return r.arrayBuffer();
+            })
+            .then(b => new Uint8Array(b))
+            .catch(error => { console.error(error); return null; }),
+        logoSindicatoComoJpeg()
+            .catch(error => { console.error(error); return null; })
+    ]);
+    const logos = { facs, sindicato };
+    if (facs && sindicato) logosPdfCache = logos;   // solo se guarda si cargaron los dos
+    return logos;
+}
+
+function mostrarMensajePdf(texto, esError) {
+    const caja = document.getElementById("mensajePdfCredito");
+    if (!caja) return;
+    caja.textContent = texto;
+    caja.classList.toggle("es-error", !!esError);
+    caja.style.display = "block";
+}
+
+async function descargarPdfCredito(codigoCredito) {
+    try {
+        if (!contextoPdf) throw new Error("No hay datos de la consulta");
+        if (!window.PdfCredito) throw new Error("El generador de PDF no está cargado");
+        const c = contextoPdf.registros.find(
+            r => String(r["Codigo Credito"]) === String(codigoCredito)
+        );
+        if (!c) throw new Error("Crédito no encontrado");
+        const codigoVisible = formatoCodigoCredito(c["Codigo Credito"]);
+        mostrarMensajePdf(`Generando el PDF del crédito ${codigoVisible}...`, false);
+
+        const logos = await cargarLogosPdf();
+        const datos = construirDatosPdf(c, contextoPdf);
+        datos.logoFacs = logos.facs;
+        datos.logoSind = logos.sindicato;
+
+        const bytes = window.PdfCredito.generar(datos);
+        const blob = new Blob([bytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const enlace = document.createElement("a");
+        enlace.href = url;
+        enlace.download = `FACS_Estado_de_cuenta_credito_${codigoVisible}.pdf`;
+        document.body.appendChild(enlace);
+        enlace.click();
+        enlace.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+        mostrarMensajePdf(
+            (logos.facs && logos.sindicato)
+                ? `PDF del crédito ${codigoVisible} generado. Revise sus descargas.`
+                : `PDF del crédito ${codigoVisible} generado, pero sin alguno de los logos (no se pudo cargar). Revise sus descargas.`,
+            false
+        );
+    } catch (error) {
+        console.error(error);
+        mostrarMensajePdf("No fue posible generar el PDF de este crédito. Intente de nuevo.", true);
+    }
+}
+
+function instalarDescargaPdf() {
+    if (pdfListenerInstalado) return;
+    const zona = document.getElementById("resultado");
+    if (!zona) return;
+    zona.addEventListener("click", evento => {
+        const boton = evento.target.closest(".btn-pdf-credito");
+        if (!boton) return;
+        evento.preventDefault();
+        descargarPdfCredito(boton.dataset.codigo);
+    });
+    pdfListenerInstalado = true;
+}
+
 // ---------- Comunicados debajo de la bienvenida + ventana emergente ----------
 
 const CLAVE_COMUNICADOS_ENTENDIDOS = "facs_comunicados_entendidos";
