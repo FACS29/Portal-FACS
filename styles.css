@@ -2057,3 +2057,153 @@ body.oscuro .valor[style*="006633"]{
         background: #006633 !important;
     }
 }
+
+/*=========================================
+  ETAPA 5: RESUMEN DEL CREDITO Y PDF POR CREDITO
+  Para volver atras: borrar este bloque (y usar los archivos de la Etapa 4).
+=========================================*/
+
+/* ---------- Resumen del credito ---------- */
+.resumen-credito .resumen-cabecera{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 4px 0 16px;
+}
+.resumen-insignia{
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.resumen-insignia-vigente{ background: #e6f4ec; color: #006633; }
+.resumen-insignia-paz{ background: #e3ecfc; color: #1d4ed8; }
+.resumen-insignia-anulado{ background: #ececec; color: #444; }
+.resumen-codigo{
+    font-size: 13px;
+    color: #5f6f65;
+}
+.resumen-saldo-valor{
+    font-size: 34px;
+    font-weight: 700;
+    color: #006633;
+    margin: 2px 0 14px;
+    font-variant-numeric: tabular-nums;
+}
+.resumen-titulo{
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+.resumen-texto{
+    margin: 0 0 14px;
+    color: #5f6f65;
+}
+.resumen-barra-texto{
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: #5f6f65;
+    margin: 8px 0 16px;
+}
+.resumen-credito .resumen-grid{
+    grid-template-columns: repeat(2, minmax(0, 1fr));   /* siempre 2 columnas, tambien en celular */
+}
+.resumen-actualizacion{
+    margin-top: 14px;
+    font-size: 12px;
+    color: #5f6f65;
+}
+@media (max-width: 480px){
+    .resumen-saldo-valor{ font-size: 28px; }
+    .resumen-titulo{ font-size: 19px; }
+}
+
+/* ---------- Historial: icono de PDF junto al estado ---------- */
+.estado-con-pdf{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.btn-pdf-credito{
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 8px;
+    border: 1px solid #cfe3d7;
+    background: #fff;
+    color: #006633;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background .15s, border-color .15s;
+}
+.btn-pdf-credito:hover{
+    background: #eaf8ef;
+    border-color: #006633;
+}
+.historial-ayuda{
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #5f6f65;
+}
+.mensaje-pdf{
+    margin: 0 0 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #e6f4ec;
+    color: #006633;
+}
+.mensaje-pdf.es-error{
+    background: #fdecea;
+    color: #b42318;
+}
+
+/* ---------- Modo oscuro (Etapa 5) ---------- */
+body.oscuro .resumen-insignia-vigente{ background: #14532d; color: #bbf7d0; }
+body.oscuro .resumen-insignia-paz{ background: #1e3a8a; color: #dbeafe; }
+body.oscuro .resumen-insignia-anulado{ background: #3a3a3a; color: #e5e5e5; }
+body.oscuro .resumen-codigo,
+body.oscuro .resumen-texto,
+body.oscuro .resumen-barra-texto,
+body.oscuro .resumen-actualizacion,
+body.oscuro .historial-ayuda{
+    color: #9FB5A8;
+}
+body.oscuro .resumen-saldo-valor{ color: #8CF2B6; }
+body.oscuro .btn-pdf-credito{
+    background: #0B1F17;
+    border-color: #2A4A38;
+    color: #8CF2B6;
+}
+body.oscuro .btn-pdf-credito:hover{
+    background: #1F3A2C;
+    border-color: #3FA36C;
+}
+body.oscuro .mensaje-pdf{
+    background: #14532d;
+    color: #bbf7d0;
+}
+body.oscuro .mensaje-pdf.es-error{
+    background: #5a1a14;
+    color: #fecaca;
+}
+
+/* ---------- Impresion: sin controles del PDF ---------- */
+@media print{
+    .btn-pdf-credito,
+    .historial-ayuda,
+    .mensaje-pdf{
+        display: none !important;
+    }
+}
