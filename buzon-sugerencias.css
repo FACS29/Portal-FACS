@@ -60,15 +60,37 @@
     padding:30px 0;
 }
 
+/* Boton "Volver al portal": mismo estilo (pildora) que "Volver al Portal del
+   Afiliados" del login administrativo y "Portal Administrativo" del portal.
+   Para volver atras: borrar las reglas .volver de este bloque y reponer estas:
+   .volver{ display:block; text-align:center; margin-top:20px; font-size:13px; color:#888; text-decoration:none; }
+   .volver:hover{ color:#006633; }
+   body.oscuro .volver{ color:#7A9184; }
+*/
 .volver{
-    display:block;
-    text-align:center;
-    margin-top:20px;
-    font-size:13px;
-    color:#888;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    width:fit-content;
+    margin:20px auto 0;
+    padding:7px 14px;
+    border:1px solid #cfd8d3;
+    border-radius:999px;
+    background:#fff;
+    color:#4b5b52;
+    font-size:12px;
+    white-space:nowrap;
+    text-decoration:none;
+    transition:border-color .2s, color .2s, background .2s;
+}
+.volver:hover,
+.volver:focus-visible{
+    color:#006633;
+    border-color:#006633;
+    background:#eaf8ef;
     text-decoration:none;
 }
-.volver:hover{ color:#006633; }
 
 body.oscuro .texto-buzon{ color:#B7C6BE; }
 
@@ -84,4 +106,14 @@ body.oscuro .mensaje-error{ color:#FF8A75; }
 
 body.oscuro .texto-exito{ color:#8CF2B6; }
 
-body.oscuro .volver{ color:#7A9184; }
+body.oscuro .volver{
+    background:#182D22;
+    border-color:#2A4A38;
+    color:#B7C6BE;
+}
+body.oscuro .volver:hover,
+body.oscuro .volver:focus-visible{
+    background:#1F3A2C;
+    border-color:#3FA36C;
+    color:#8CF2B6;
+}
