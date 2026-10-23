@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btnSalir").addEventListener("click", cerrarSesion);
 
     esSuperadmin = sesion.rol === "superadministrador";
+    instalarAccionesMensajes();
 
     await cargarMensajes();
     renderizar();
@@ -97,6 +98,13 @@ function renderizar() {
             </div>
             <p class="mensaje-texto">${escaparHtml(m.mensaje)}</p>
             <div class="mensaje-acciones">
+                <button type="button" data-accion="responder" data-id="${m.id}" class="btn-responder"
+                    ${tieneDocumento(m) ? "" : 'disabled title="Este mensaje no trae documento, no se puede responder desde aqui"'}>
+                    Responder
+                </button>
+                <button type="button" data-accion="copiar" data-id="${m.id}" title="Copiar nombre, fecha y mensaje">
+                    &#128203; Copiar
+                </button>
                 <button data-accion="leido" data-id="${m.id}">
                     ${m.leido ? "Marcar como no leído" : "Marcar como leído"}
                 </button>
@@ -111,6 +119,62 @@ function renderizar() {
 
     contenedor.querySelectorAll('[data-accion="eliminar"]').forEach((boton) => {
         boton.addEventListener("click", () => eliminarMensaje(Number(boton.dataset.id)));
+    });
+}
+
+function tieneDocumento(m) {
+    return String(m.documento ?? "").replace(/[^0-9]/g, "") !== "";
+}
+
+// Texto que se copia: solo nombre, fecha y mensaje (sin documento ni otros datos).
+function textoParaCopiar(m) {
+    return [
+        `Nombre: ${m.nombre || "Afiliado"}`,
+        `Fecha: ${formatearFechaHora(m.creado_en)}`,
+        `Mensaje: ${m.mensaje || ""}`
+    ].join("\n");
+}
+
+async function copiarTexto(texto) {
+    try {
+        await navigator.clipboard.writeText(texto);
+        return true;
+    } catch (e) {
+        // Respaldo para navegadores o conexiones sin permiso de portapapeles
+        const area = document.createElement("textarea");
+        area.value = texto;
+        area.style.position = "fixed";
+        area.style.opacity = "0";
+        document.body.appendChild(area);
+        area.select();
+        let ok = false;
+        try { ok = document.execCommand("copy"); } catch (e2) { ok = false; }
+        area.remove();
+        return ok;
+    }
+}
+
+function irAResponder(id) {
+    window.location.href = "admin-comunicados.html?responder=" + encodeURIComponent(id);
+}
+
+// Un solo escucha para todos los botones "Copiar" y "Responder" de la lista
+function instalarAccionesMensajes() {
+    document.getElementById("listaMensajes").addEventListener("click", async (evento) => {
+        const boton = evento.target.closest("button[data-accion]");
+        if (!boton || boton.disabled) return;
+        const accion = boton.dataset.accion;
+        if (accion !== "copiar" && accion !== "responder") return;
+        const mensaje = mensajesCompletos.find((m) => m.id === Number(boton.dataset.id));
+        if (!mensaje) return;
+        if (accion === "responder") {
+            irAResponder(mensaje.id);
+            return;
+        }
+        const original = boton.innerHTML;
+        const copiado = await copiarTexto(textoParaCopiar(mensaje));
+        boton.textContent = copiado ? "\u2705 Copiado" : "No se pudo copiar";
+        setTimeout(() => { boton.innerHTML = original; }, 2000);
     });
 }
 

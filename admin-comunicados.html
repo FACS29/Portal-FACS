@@ -46,6 +46,7 @@
         "Para un afiliado" solo aparece cuando esa persona consulta su documento.
     </p>
 
+    <p id="avisoRespuesta" class="aviso" style="display:none" role="status"></p>
     <div id="listaComunicados" class="lista-mensajes">Cargando...</div>
 </main>
 
@@ -53,6 +54,11 @@
 <div id="modalComunicado" class="modal-fondo" style="display:none">
     <div class="modal-caja">
         <h3 id="tituloModalComunicado">Nuevo comunicado</h3>
+        <div id="citaMensajeOriginal" class="cita-original" style="display:none">
+            <p class="cita-original-etiqueta">Mensaje original (solo de referencia, no se envia)</p>
+            <p id="citaMensajeFecha" class="cita-original-fecha"></p>
+            <p id="citaMensajeTexto" class="cita-original-texto"></p>
+        </div>
         <form id="formComunicado">
             <input type="hidden" id="comunicadoId">
 

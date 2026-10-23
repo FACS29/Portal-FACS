@@ -43,6 +43,21 @@ async function resolverPerfilParaRecuperacion(documento) {
     return data[0]; // { correo, rol }
 }
 
+// Despues de entrar: si hay mensajes sin leer se va directo a Mensajes; si no, al Dashboard.
+async function decidirDestinoTrasLogin() {
+    try {
+        const { count, error } = await clienteAuth
+            .from("Mensajes")
+            .select("id", { count: "exact", head: true })
+            .or("leido.is.null,leido.eq.false");
+        sessionStorage.setItem("facs_mensajes_revisados", "1");
+        if (!error && count > 0) return "admin-mensajes.html";
+    } catch (e) {
+        console.error("No se pudo revisar si hay mensajes sin leer:", e);
+    }
+    return "admin-dashboard.html";
+}
+
 formLogin.addEventListener("submit", async function (evento) {
     evento.preventDefault();
 
@@ -80,7 +95,7 @@ formLogin.addEventListener("submit", async function (evento) {
     // Dashboard es la pagina de aterrizaje para todos los roles --
     // Administradores solo lo ve el superadministrador, y se le
     // muestra en el menu una vez confirmado su rol (admin-guard.js).
-    window.location.href = "admin-dashboard.html";
+    window.location.href = await decidirDestinoTrasLogin();
 });
 
 btnRecuperar.addEventListener("click", async function () {

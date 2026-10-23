@@ -35,6 +35,7 @@ function formatearCodigo(codigo) {
 
 let creditosCompletos = [];
 let nombresPorDocumento = {};
+let retirosPorDocumento = {};
 let pagosCompletos = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -90,9 +91,33 @@ async function traerTodasLasFilas(cliente, tabla, columnas) {
     return { data: todas, error: null };
 }
 
+// Misma regla que la consulta del portal: es afiliado activo si el campo "Afiliado" dice si.
+function esAfiliadoActivo(credito) {
+    const valor = String(credito.Afiliado || "").toLowerCase();
+    return valor.includes("si") || valor.includes("s\u00ed");
+}
+
+// Trae Afiliados con la fecha de retiro. Si esa columna no se pudiera leer, el listado
+// sigue funcionando (solo se queda sin fecha de retiro).
+async function cargarAfiliados() {
+    let respuesta = await traerTodasLasFilas(clienteAuth, "Afiliados", "Documento, Nombre, Fecha_Retiro_Sind");
+    if (respuesta.error) {
+        console.warn("No se pudo leer Fecha_Retiro_Sind; se sigue sin fecha de retiro:", respuesta.error.message);
+        respuesta = await traerTodasLasFilas(clienteAuth, "Afiliados", "Documento, Nombre");
+    }
+    return respuesta;
+}
+
+function fechaActualizacionCorta(valor) {
+    if (!valor) return "";
+    const fecha = new Date(String(valor).replace(" ", "T"));
+    if (isNaN(fecha)) return "";
+    return fecha.toLocaleDateString("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 async function cargarDatos() {
     const [afiliadosRes, creditosRes, pagosRes] = await Promise.all([
-        traerTodasLasFilas(clienteAuth, "Afiliados", "Documento, Nombre"),
+        cargarAfiliados(),
         traerTodasLasFilas(clienteAuth, "Creditos", "*"),
         traerTodasLasFilas(clienteAuth, "Pagos", "*")
     ]);
@@ -106,6 +131,7 @@ async function cargarDatos() {
 
     (afiliadosRes.data || []).forEach((a) => {
         nombresPorDocumento[normalizarDocumento(a.Documento)] = a.Nombre;
+        if (a.Fecha_Retiro_Sind) retirosPorDocumento[normalizarDocumento(a.Documento)] = a.Fecha_Retiro_Sind;
     });
     creditosCompletos = creditosRes.data || [];
     pagosCompletos = pagosRes.data || [];
@@ -143,7 +169,7 @@ function aplicarFiltros() {
     cuerpo.innerHTML = filtrados.map((c) => `
         <tr data-codigo="${c.Codigo_Credito}">
             <td>${formatearCodigo(c.Codigo_Credito)}</td>
-            <td>${nombresPorDocumento[normalizarDocumento(c.Documento)] || "—"}</td>
+            <td>${nombresPorDocumento[normalizarDocumento(c.Documento)] || "—"}${esAfiliadoActivo(c) ? "" : ' <span class="etiqueta-retirado">Retirado</span>'}</td>
             <td>${formatearDocumento(c.Documento)}</td>
             <td>${c.Empresa || "—"}</td>
             <td>${c.Estado || "—"}</td>
@@ -210,6 +236,15 @@ function codigoParaResumen(codigo) {
     return codigo;
 }
 
+// Convierte "AAAA-MM-DD" (o "AAAA-MM-DDTHH:MM...") en una fecha LOCAL a las 00:00.
+// new Date("2026-03-01") la toma como medianoche UTC, que en Colombia (UTC-5)
+// cae el 28/feb a las 7 p.m. y desplaza el mes de las fechas en dia 1.
+function fechaLocal(valor) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(valor ?? ""));
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return new Date(valor);
+}
+
 function fechaParaResumen(fecha) {
     if (!fecha) return "";
     const partes = fecha.split("-");
@@ -226,7 +261,7 @@ function calcularMesesGraciaYParciales(credito, pagos, ultimaActualizacion) {
 
     const cuotasPactadas = Number(vigente.Cuotas_Pactadas);
     const cuotasPagadas = Number(vigente.Cuotas_Pagadas || 0);
-    const fechaInicio = new Date(vigente.Fecha_Inicial);
+    const fechaInicio = fechaLocal(vigente.Fecha_Inicial);
     const diaPago = vigente.Empresa === "ELG" ? 25 : 30;
 
     function esPagoParcial(pago) {
@@ -264,7 +299,7 @@ function calcularMesesGraciaYParciales(credito, pagos, ultimaActualizacion) {
         const ultimoDiaDelMes = new Date(fechaCuota.getFullYear(), fechaCuota.getMonth() + 1, 0).getDate();
         fechaCuota.setDate(Math.min(diaPago, ultimoDiaDelMes));
 
-        const pago = pagos.find(p => mismoMes(new Date(p.Fecha), fechaCuota));
+        const pago = pagos.find(p => mismoMes(fechaLocal(p.Fecha), fechaCuota));
 
         if (pago) {
             if (esPagoParcial(pago)) {
@@ -314,6 +349,10 @@ function construirResumenCopiable(credito, mesesGraciaYParciales) {
         `Fecha final: ${fechaParaResumen(credito.Fecha_Final)}`,
         `Próximo pago: ${fechaParaResumen(credito.Proximo_Pago)}`
     ];
+
+    // "Última Actualización Portal" va antes de la Nota (la Nota queda de última).
+    const fechaActualizacion = fechaActualizacionCorta(ultimaActualizacionReal);
+    if (fechaActualizacion) lineas.push(`Última Actualización Portal: ${fechaActualizacion}`);
 
     if (mesesGraciaYParciales > 0) {
         lineas.push(
@@ -385,6 +424,13 @@ function mostrarDetalle(codigo) {
     const nombre = nombresPorDocumento[normalizarDocumento(credito.Documento)] || "Nombre no encontrado en Afiliados";
 
     document.getElementById("detalleNombre").textContent = nombre;
+    const retirado = !esAfiliadoActivo(credito);
+    const fechaRetiro = retirosPorDocumento[normalizarDocumento(credito.Documento)];
+    document.getElementById("detEtiquetaRetirado").style.display = retirado ? "inline-block" : "none";
+    document.getElementById("filaAfiliacion").style.display = retirado ? "" : "none";
+    document.getElementById("filaFechaRetiro").style.display = retirado ? "" : "none";
+    document.getElementById("detAfiliacion").textContent = "\uD83D\uDFE0 Retirado del Sindicato";
+    document.getElementById("detFechaRetiro").textContent = fechaRetiro ? formatearFecha(fechaRetiro) : "No registrada";
     document.getElementById("detalleSubtitulo").textContent =
         `${formatearCodigo(credito.Codigo_Credito)} · Documento ${formatearDocumento(credito.Documento)}`;
 

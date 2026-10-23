@@ -16,7 +16,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="styles.css?v=6">
+    <link rel="stylesheet" href="styles.css?v=8">
 
 </head>
 
@@ -26,25 +26,33 @@
 
 <button id="btnVolverArriba" class="btn-volver-arriba" title="Volver arriba" aria-label="Volver arriba">↑</button>
 
-<header>
+<header class="encabezado-portal">
 
     <img src="logo.png" class="logo" alt="Logo de Sintraproaceites La Gloria">
 
-    <h1>SINTRAPROACEITES LA GLORIA</h1>
+    <div class="encabezado-titulos">
 
-    <h2>Fondo de Ahorro y Crédito Sindical (FACS)</h2>
+        <h1>SINTRAPROACEITES LA GLORIA</h1>
 
-    <h3>Portal del Afiliado</h3>
+        <h2>Fondo de Ahorro y Crédito Sindical (FACS)</h2>
 
-    <div class="actualizacion">
+    </div>
 
-        Última actualización:
+    <div class="encabezado-extra">
 
-        <span id="ultimaActualizacion">
+        <h3>Portal del Afiliado</h3>
 
-            Cargando…
+        <div class="actualizacion">
 
-        </span>
+            <span class="act-larga">Última actualización:</span><span class="act-corta">Actualizado:</span>
+
+            <span id="ultimaActualizacion">
+
+                Cargando…
+
+            </span>
+
+        </div>
 
     </div>
 
@@ -69,7 +77,7 @@
     <div class="portada">
 
         <h2 class="portada-titulo">
-            Bienvenido al Portal del FACS
+            <span class="solo-escritorio">Bienvenido al Portal del FACS</span><span class="solo-celular">Bienvenido(a)</span>
         </h2>
 
         <p class="portada-subtitulo">
@@ -79,13 +87,13 @@
 
         <div class="portada-beneficios">
 
-            <div>✔ Consulta segura y confidencial.</div>
+            <div><span class="ok">✔</span> Consulta segura y confidencial.</div>
 
-            <div>✔ Información financiera actualizada.</div>
+            <div><span class="ok">✔</span> Información financiera actualizada.</div>
 
-            <div>✔ Disponible las 24 horas del día.</div>
+            <div><span class="ok">✔</span> Disponible las 24 horas del día.</div>
 
-            <div>✔ Uso exclusivo para afiliados y deudores.</div>
+            <div><span class="ok">✔</span> Uso exclusivo para afiliados y deudores.</div>
 
         </div>
 
@@ -96,7 +104,7 @@
                 id="documento"
                 inputmode="numeric"
                 autocomplete="off"
-                placeholder="Ingrese su número de documento"
+                placeholder="Número de documento"
                 aria-label="Número de documento">
 
             <input
@@ -249,49 +257,39 @@
 </main>
 
 <footer>
-
-    <p>
-
-        La información presentada corresponde a los registros
+    <p class="pie-aviso">
+        <span class="solo-escritorio">La información presentada corresponde a los registros
         oficiales del Fondo de Ahorro y Crédito Sindical (FACS)
-        de SINTRAPROACEITES LA GLORIA.
-
+        de SINTRAPROACEITES LA GLORIA.</span><span class="solo-celular">Información de carácter informativo, según los registros oficiales del FACS.</span>
     </p>
-
-    <p>
-
+    <p class="pie-aviso solo-escritorio">
         Información de carácter informativo para los afiliados.
-
     </p>
-
     <p class="creditos-portal">
-
-        Portal diseñado y desarrollado por:<br>
-
-        <strong>
-
+        <span class="solo-escritorio">Portal diseñado y desarrollado por:<br></span><span class="solo-celular">Diseño y desarrollo: </span><strong>
             Jhon Bairo Rojas Beltrán
-
         </strong>
-
     </p>
-
-    <a
-        href="buzon-sugerencias.html"
-        id="enlaceBuzon"
-        class="enlace-buzon"
-        style="display:none">
-        ¿Tienes algo que decirnos? Déjanos un mensaje
-    </a>
-
-    <a href="admin-login.html" class="enlace-admin">Portal Administrativo</a>
-
+    <div class="pie-enlaces">
+        <a
+            href="buzon-sugerencias.html"
+            id="enlaceBuzon"
+            class="enlace-buzon"
+            style="display:none">
+            ¿Tienes algo que decirnos? Déjanos un mensaje
+        </a>
+        <a href="admin-login.html" class="enlace-admin" aria-label="Ir al Portal Administrativo (solo personal autorizado)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            Portal Administrativo
+            <span aria-hidden="true">&rsaquo;</span>
+        </a>
+    </div>
 </footer>
 
 <script src="modo-oscuro.js"></script>
 <script src="supabase.js"></script>
 <script src="pdf-credito.js?v=1"></script>
-<script src="script.js?v=5"></script>
+<script src="script.js?v=7"></script>
 
 </body>
 

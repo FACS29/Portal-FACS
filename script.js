@@ -58,7 +58,7 @@ async function cargarDatos() {
                         "es-CO",
                         {
                             day: "2-digit", month: "2-digit", year: "numeric",
-                            hour: "2-digit", minute: "2-digit", second: "2-digit"
+                            hour: "2-digit", minute: "2-digit"
                         }
                     )
             );
@@ -90,6 +90,15 @@ function formatearFecha(fecha) {
 
 }
 
+// Convierte "AAAA-MM-DD" (o "AAAA-MM-DDTHH:MM...") en una fecha LOCAL a las 00:00.
+// new Date("2026-03-01") la toma como medianoche UTC, que en Colombia (UTC-5)
+// cae el 28/feb a las 7 p.m. y desplaza el mes de las fechas en dia 1.
+function fechaLocal(valor) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(valor ?? ""));
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return new Date(valor);
+}
+
 function escaparHtml(texto) {
     const div = document.createElement("div");
     div.textContent = texto ?? "";
@@ -112,6 +121,10 @@ function construirResumenCopiable(vigente, nombreAfiliado, documento, mesesGraci
         `Fecha final: ${vigente["Fecha Final"] || ""}`,
         `Próximo pago: ${vigente["Proximo Pago"] || ""}`
     ];
+
+    // "Última Actualización Portal" va antes de la Nota (la Nota queda de última).
+    const fechaActualizacion = fechaActualizacionCorta();
+    if (fechaActualizacion) lineas.push(`Última Actualización Portal: ${fechaActualizacion}`);
 
     if (mesesGraciaYParciales > 0) {
         lineas.push(
@@ -239,6 +252,8 @@ function mostrarBusqueda() {
     mostrarAvisoConsultaInterna(false);
 
     document.getElementById("pantallaInicio").style.display = "block";
+    document.body.classList.remove("modo-consulta");
+    programarAjusteTitulos();
 
     // LIMPIAR TODOS LOS CAMPOS
     document.getElementById("documento").value = "";
@@ -354,7 +369,7 @@ function construirDatosDeudor(
 
         <div class="grid">
 
-            <div class="item">
+            <div class="item item-nombre-deudor">
 
                 <div class="etiqueta">
 
@@ -1264,6 +1279,7 @@ const pagos = (datosPortal.pagos || [])
     .sort((a, b) => Number(a.Numero_cuota) - Number(b.Numero_cuota));
 
 document.getElementById("pantallaInicio").style.display = "none";
+document.body.classList.add("modo-consulta");
 
 const estadoInfo =
     obtenerEstadoCredito(vigente.Estado);
@@ -1606,6 +1622,7 @@ resultado.innerHTML =
  `;
 
 instalarDescargaPdf();
+ajustarTitulosUnaLinea();
 const textoUltimaConsulta =
     document.getElementById(
         "ultimaConsultaUsuario"
@@ -1824,7 +1841,7 @@ function construirTablaAmortizacion(
 
     const cuotasPagadas = Number(vigente.Cuotas_Pagadas || 0);
 
-    const fechaInicio = new Date(vigente.Fecha_Inicial);
+    const fechaInicio = fechaLocal(vigente.Fecha_Inicial);
 
     const diaPago = vigente.Empresa === "ELG" ? 25 : 30;
 
@@ -1918,7 +1935,7 @@ function construirTablaAmortizacion(
 
     const pago = pagos.find(p => {
 
-        const fechaPago = new Date(p.Fecha);
+        const fechaPago = fechaLocal(p.Fecha);
 
     return mismoMes(fechaPago, fechaCuota);
 
@@ -2411,7 +2428,8 @@ async function logoSindicatoComoJpeg() {
         img.onerror = () => mal(new Error("No se pudo cargar el logo del sindicato"));
         img.src = ruta;
     });
-    const lado = 320;
+    // Sin agrandar: si el logo es pequeno, se conserva su tamano (maximo 320).
+    const lado = Math.min(320, Math.max(img.naturalWidth, img.naturalHeight));
     const lienzo = document.createElement("canvas");
     lienzo.width = lado;
     lienzo.height = lado;
@@ -2509,6 +2527,51 @@ function instalarDescargaPdf() {
     });
     pdfListenerInstalado = true;
 }
+
+// ======================================================
+// TITULOS Y NOMBRE EN UNA SOLA LINEA (SOLO EN CELULAR)
+// ======================================================
+// El CSS ya da un tamano que casi siempre cabe. Esto es la red de seguridad: si por la
+// tipografia o por un nombre muy largo no cupiera, se achica la letra hasta que quepa.
+// El nombre de la persona, si aun asi no cabe en su tamano minimo, pasa a dos lineas.
+const MEDIA_CELULAR = "(max-width: 600px)";
+let temporizadorAjusteTitulos = null;
+
+function ajustarUnaLinea(elemento, minimoPx, permitirSalto) {
+    elemento.style.fontSize = "";
+    elemento.style.whiteSpace = "";
+    if (!window.matchMedia || !window.matchMedia(MEDIA_CELULAR).matches) return;
+    let tamano = parseFloat(window.getComputedStyle(elemento).fontSize);
+    let vueltas = 80;
+    while (elemento.scrollWidth > elemento.clientWidth + 1 && tamano > minimoPx && vueltas-- > 0) {
+        tamano = Math.max(minimoPx, tamano - 0.5);
+        elemento.style.fontSize = tamano + "px";
+    }
+    if (permitirSalto && elemento.scrollWidth > elemento.clientWidth + 1) {
+        elemento.style.whiteSpace = "normal";
+    }
+}
+
+function ajustarTitulosUnaLinea() {
+    document.querySelectorAll(".encabezado-portal h1, .encabezado-portal h2")
+        .forEach(el => ajustarUnaLinea(el, 9, false));
+    document.querySelectorAll(".bienvenida-nombre")
+        .forEach(el => ajustarUnaLinea(el, 15, true));
+    document.querySelectorAll(".seccion h2")
+        .forEach(el => ajustarUnaLinea(el, 12, false));
+}
+
+function programarAjusteTitulos() {
+    clearTimeout(temporizadorAjusteTitulos);
+    temporizadorAjusteTitulos = setTimeout(ajustarTitulosUnaLinea, 60);
+}
+
+window.addEventListener("resize", programarAjusteTitulos);
+window.addEventListener("orientationchange", programarAjusteTitulos);
+if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(ajustarTitulosUnaLinea);   // cuando ya cargaron las tipografias
+}
+ajustarTitulosUnaLinea();
 
 // ---------- Comunicados debajo de la bienvenida + ventana emergente ----------
 
@@ -2709,8 +2772,10 @@ document.addEventListener('DOMContentLoaded', () => {
         input.type = tipo;
     };
     
-    // Las respuestas secretas solo admiten MAYÚSCULAS y sin tildes:
-    // se corrige mientras se escribe (no solo visualmente).
+    // Las respuestas secretas solo admiten MAYÚSCULAS y sin tildes (la Ñ SÍ se
+    // conserva): se corrige mientras se escribe (no solo visualmente).
+    // Supabase (normalizar_respuesta) compara Ñ como N, así que NIÑO y NINO
+    // coinciden y las respuestas ya guardadas siguen funcionando.
     ['respuestaSecreta', 'respuestaRecuperacion'].forEach((id) => {
         const campo = document.getElementById(id);
         if (!campo) return;
@@ -2719,7 +2784,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.isComposing) return;
             const limpio = campo.value
                 .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/n\u0303/gi, 'Ñ')          // conserva la Ñ (ya compuesta)
+                .replace(/[\u0300-\u036f]/g, '')   // quita las demás tildes
                 .toUpperCase();
 
             if (limpio !== campo.value) {

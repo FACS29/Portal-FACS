@@ -414,6 +414,9 @@ function aplicarFiltrosReset() {
 
     const totalPendientes = Object.keys(pendientesPorDocumento).length;
     document.getElementById("contadorPendientes").textContent = totalPendientes || "";
+    if (typeof ponerInsignia === "function") {
+        ponerInsignia("#navAdministradores", "contadorResetMenu", totalPendientes);
+    }
 
     visibles = visibles.filter((s) => {
         if (estadoElegido !== "todas" && s.estado !== estadoElegido) return false;

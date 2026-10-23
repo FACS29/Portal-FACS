@@ -52,3 +52,20 @@
     background:#fdece9;
     border-color:#B03A2E !important;
 }
+
+/* ---------- Acciones de cada mensaje: Responder y Copiar ---------- */
+.mensaje-acciones{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+}
+.mensaje-acciones .btn-responder{
+    border-color:#006633;
+    color:#006633;
+    font-weight:600;
+}
+.mensaje-acciones .btn-responder:hover{ background:#eaf8ef; }
+.mensaje-acciones button:disabled{
+    opacity:.5;
+    cursor:not-allowed;
+}

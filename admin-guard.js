@@ -68,10 +68,123 @@ async function requerirSesion() {
             .forEach((enlace) => { enlace.style.display = ""; });
     }
 
+    // Aviso de mensajes sin leer: se revisa una sola vez por sesion del navegador y
+    // sin hacer esperar a la pagina (si hay mensajes sin leer, pasa a la pestana Mensajes).
+    if (!enPaginaDeClave) {
+        iniciarInsigniasMenu();
+        revisarMensajesNoLeidosUnaVez();
+    }
     return window.sesionAdmin;
 }
 
 async function cerrarSesion() {
+    try { sessionStorage.removeItem(CLAVE_REVISION_MENSAJES); } catch (e) { /* sin acceso a sessionStorage */ }
     await clienteAuth.auth.signOut();
     window.location.href = "admin-login.html";
+}
+
+/* ---------- Mensajes sin leer al entrar ---------- */
+const CLAVE_REVISION_MENSAJES = "facs_mensajes_revisados";
+
+function irAPagina(url) {
+    window.location.href = url;
+}
+
+// Cuenta los mensajes sin leer (leido en falso o vacio). Si no se puede leer, devuelve null.
+async function contarMensajesNoLeidos() {
+    const { count, error } = await clienteAuth
+        .from("Mensajes")
+        .select("id", { count: "exact", head: true })
+        .or("leido.is.null,leido.eq.false");
+    if (error) {
+        console.error("No se pudieron contar los mensajes sin leer:", error);
+        return null;   // null = no se pudo saber (no se toca lo que ya se muestra)
+    }
+    return count || 0;
+}
+
+async function revisarMensajesNoLeidosUnaVez() {
+    try {
+        if (sessionStorage.getItem(CLAVE_REVISION_MENSAJES)) return;
+        // Se marca ANTES de consultar: asi nunca se repite ni se forma un bucle.
+        sessionStorage.setItem(CLAVE_REVISION_MENSAJES, "1");
+        const ruta = window.location.pathname;
+        if (ruta.endsWith("admin-mensajes.html")) return;
+        if (window.location.search.includes("responder=")) return;   // no interrumpir una respuesta en curso
+        const noLeidos = await contarMensajesNoLeidos();
+        if (noLeidos > 0) irAPagina("admin-mensajes.html");
+    } catch (error) {
+        console.error("No se pudo revisar si hay mensajes sin leer:", error);
+    }
+}
+
+/* ---------- Insignias rojas de pendientes en el menu: se ven en TODAS las pestanas ---------- */
+// Pone (o quita, si es 0) el numero rojo junto a un enlace del menu.
+function ponerInsignia(selectorEnlace, idInsignia, cantidad) {
+    const enlace = document.querySelector(selectorEnlace);
+    if (!enlace) return;
+    let insignia = document.getElementById(idInsignia);
+    if (!insignia) {
+        insignia = document.createElement("span");
+        insignia.id = idInsignia;
+        insignia.className = "badge";
+        enlace.appendChild(insignia);
+    }
+    insignia.textContent = cantidad > 0 ? String(cantidad) : "";
+    actualizarPuntoMenuMovil();
+}
+
+// En el celular el menu esta escondido tras el boton ☰: ahi se muestra el total de pendientes.
+function actualizarPuntoMenuMovil() {
+    const boton = document.getElementById("btnMenu");
+    if (!boton) return;
+    const leer = (id) => parseInt((document.getElementById(id) || {}).textContent, 10) || 0;
+    const total = leer("contadorNoLeidos") + leer("contadorResetMenu");
+    let punto = boton.querySelector(".punto-pendientes");
+    if (!punto) {
+        punto = document.createElement("span");
+        punto.className = "punto-pendientes";
+        boton.appendChild(punto);
+    }
+    punto.textContent = total > 0 ? String(total) : "";
+    boton.setAttribute("aria-label", total > 0 ? `Abrir menú (${total} pendientes)` : "Abrir menú");
+}
+
+// Solicitudes de restablecimiento pendientes: se cuenta igual que la tarjeta de ese panel
+// (una por documento). Solo el superadministrador puede verlas; null = no se pudo saber.
+async function contarSolicitudesResetPendientes() {
+    if (!window.sesionAdmin || window.sesionAdmin.rol !== "superadministrador") return 0;
+    const { data, error } = await clienteAuth.rpc("listar_solicitudes_reset");
+    if (error) {
+        console.warn("No se pudieron contar las solicitudes de restablecimiento:", error.message);
+        return null;
+    }
+    const documentos = new Set(
+        (data || []).filter((s) => s.estado === "pendiente").map((s) => s.documento)
+    );
+    return documentos.size;
+}
+
+async function actualizarInsigniasMenu() {
+    try {
+        const [noLeidos, pendientesReset] = await Promise.all([
+            contarMensajesNoLeidos(),
+            contarSolicitudesResetPendientes()
+        ]);
+        if (noLeidos !== null) ponerInsignia('a[href="admin-mensajes.html"]', "contadorNoLeidos", noLeidos);
+        if (pendientesReset !== null) ponerInsignia("#navAdministradores", "contadorResetMenu", pendientesReset);
+    } catch (error) {
+        console.error("No se pudieron actualizar los pendientes del menu:", error);
+    }
+}
+
+function iniciarInsigniasMenu() {
+    if (window.__insigniasMenuIniciadas) return;
+    window.__insigniasMenuIniciadas = true;
+    actualizarInsigniasMenu();
+    // Se actualizan solas: cada minuto y cada vez que vuelves a esta pestana del navegador
+    setInterval(actualizarInsigniasMenu, 60000);
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) actualizarInsigniasMenu();
+    });
 }

@@ -2207,3 +2207,258 @@ body.oscuro .mensaje-pdf.es-error{
         display: none !important;
     }
 }
+
+/*=========================================
+  ETAPA 7: CONSULTA COMPACTA EN CELULAR (hasta 600 px)
+  Para volver atras: borrar este bloque y usar el index.html y script.js anteriores.
+=========================================*/
+
+/* En computador se ve el texto largo; en celular, el corto */
+.act-corta{ display: none; }
+
+@media (max-width: 600px){
+
+    /* ---------- Encabezado: logo a la izquierda; sindicato y FACS, UNA linea cada uno ---------- */
+    .encabezado-portal{
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        column-gap: 10px;
+        text-align: left;
+        padding: 8px 46px 8px 10px;
+        border-top-width: 4px;
+    }
+    .encabezado-portal .logo{
+        flex: none;
+        width: 52px;
+        height: auto;
+        margin: 0;
+    }
+    .encabezado-titulos{
+        flex: 1 1 0;
+        min-width: 0;
+    }
+    .encabezado-portal h1{
+        font-size: clamp(10px, calc((100vw - 118px) / 17.6), 30px);
+        line-height: 1.15;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        overflow-wrap: normal;
+    }
+    .encabezado-portal h2{
+        font-size: clamp(10px, calc((100vw - 118px) / 19.4), 20px);
+        margin: 2px 0 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .encabezado-extra{
+        flex: 0 0 calc(100% + 36px);   /* usa tambien el espacio que se reserva al boton de modo oscuro */
+        margin-right: -36px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px 10px;
+        margin-top: 6px;
+    }
+    .encabezado-portal h3{
+        margin: 0;
+        padding: 3px 8px;
+        font-size: 10.5px;
+        letter-spacing: .02em;
+    }
+    .encabezado-portal .actualizacion{
+        margin: 0;
+        font-size: 11px;
+    }
+    .act-larga{ display: none; }
+    .act-corta{ display: inline; }
+    .btn-modo-oscuro{
+        top: 8px;
+        right: 8px;
+        width: 32px;
+        height: 32px;
+        font-size: 15px;
+    }
+
+    /* Ya consultando: encabezado todavia mas corto (sin etiqueta ni fecha: la fecha va en el Resumen) */
+    body.modo-consulta .encabezado-portal .logo{ width: 44px; }
+    body.modo-consulta .encabezado-extra{ display: none; }
+
+    /* ---------- Espacios generales ---------- */
+    .contenedor{ padding: 12px 0; }
+    .card{
+        padding: 14px;
+        margin-bottom: 12px;
+        border-radius: 14px;
+    }
+
+    /* ---------- Bienvenida: tres lineas ---------- */
+    .card.bienvenida{
+        padding: 12px 14px;
+        border-top-width: 4px;
+    }
+    .bienvenida-saludo{
+        font-size: 13px;
+        margin-bottom: 2px;
+    }
+    .bienvenida-nombre{
+        font-size: 22px;
+        line-height: 1.2;
+        margin-bottom: 6px;
+        white-space: nowrap;
+        overflow: hidden;              /* respaldo: si el ajuste automatico no corriera, se corta con "..." */
+        text-overflow: ellipsis;
+    }
+    .bienvenida-mensaje{
+        font-size: 14px;
+        margin-bottom: 0;
+    }
+    .bienvenida-texto{ display: none; }          /* "Gracias por utilizar...": solo en computador */
+    .bienvenida-ultima-consulta{
+        margin-top: 6px;
+        font-size: 12px;
+    }
+
+    /* "Estado Actual del Crédito": ya lo dice el Resumen (insignia y código) */
+    .card > .estado{ display: none; }
+
+    /* ---------- Secciones y tarjetas de datos ---------- */
+    .seccion{ margin-top: 14px; }
+    .seccion h2{
+        font-size: 17px;
+        margin-bottom: 10px;
+        padding-bottom: 7px;
+        border-bottom-width: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .grid,
+    .grid[style]{
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px;
+    }
+    .item{ padding: 10px 12px; }
+    .etiqueta{
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+    .valor{
+        font-size: 15px;
+        overflow-wrap: anywhere;
+    }
+    .saldo-destacado{ grid-column: 1 / span 2; }
+    .item-nombre-deudor{ display: none; }        /* el nombre ya salio en la bienvenida */
+    .item.afiliado-activo,
+    .item.afiliado-retirado{ grid-column: 1 / span 2; }   /* la afiliacion ocupa todo el ancho */
+}
+
+/*=========================================
+  ETAPA 8: TARJETA DE INGRESO Y PIE DE PAGINA COMPACTOS
+  Para volver atras: borrar este bloque y usar el index.html anterior.
+=========================================*/
+.solo-celular{ display: none; }
+.pie-enlaces{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+.enlace-buzon{ margin-top: 0; }
+.enlace-admin{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 0;
+    padding: 7px 14px;
+    border: 1px solid #cfd8d3;
+    border-radius: 999px;
+    background: #fff;
+    color: #4b5b52;
+    font-size: 12px;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: border-color .2s, color .2s, background .2s;
+}
+.enlace-admin:hover,
+.enlace-admin:focus-visible{
+    color: #006633;
+    border-color: #006633;
+    background: #eaf8ef;
+    text-decoration: none;
+}
+.portada-beneficios .ok{ color: #006633; font-weight: 700; }
+
+@media (max-width: 600px){
+    .solo-escritorio{ display: none; }
+    .solo-celular{ display: inline; }
+
+    .busqueda{
+        padding: 16px 14px;
+        margin-bottom: 12px;
+        border-radius: 16px;
+    }
+    .portada-titulo{
+        font-size: 24px;
+        margin-bottom: 6px;
+    }
+    .portada-subtitulo{
+        font-size: 15px;
+        line-height: 1.45;
+        margin-bottom: 14px;
+    }
+    .portada-beneficios{
+        display: block;
+        padding: 8px 12px;
+        margin-bottom: 16px;
+        border-left-width: 4px;
+    }
+    .portada-beneficios div{
+        margin: 0;
+        padding: 5px 0;
+        font-size: 13px;
+    }
+    .portada-beneficios .ok{ margin-right: 3px; }
+    .portada-formulario{ gap: 10px; }
+    .busqueda input{
+        padding: 12px 14px;
+        font-size: 16px;
+    }
+    .busqueda button{
+        margin-top: 0;
+        padding: 12px 20px;
+        font-size: 15px;
+    }
+    footer{
+        margin-top: 12px;
+        padding: 14px 14px 18px;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+    .pie-aviso{ margin: 0; }
+    footer .creditos-portal{
+        margin-top: 8px;
+        font-size: 11.5px;
+    }
+}
+
+/* ---------- Modo oscuro (Etapa 8) ---------- */
+body.oscuro .portada-beneficios .ok{ color: #8CF2B6; }
+body.oscuro .enlace-admin{
+    background: #14261D;
+    border-color: #2A4A38;
+    color: #B8C9BF;
+}
+body.oscuro .enlace-admin:hover,
+body.oscuro .enlace-admin:focus-visible{
+    background: #1F3A2C;
+    border-color: #3FA36C;
+    color: #8CF2B6;
+}
+

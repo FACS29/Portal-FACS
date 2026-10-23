@@ -162,3 +162,85 @@ body{ font-family:"IBM Plex Sans", Arial, Helvetica, sans-serif; background:#f2f
     border:none;
 }
 .acciones-modal-clave .btn-primario:hover{ background:#008040; }
+
+/* ---------- Boton SALIR dentro del menu (al final) ---------- */
+.menu-lateral{
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+}
+.menu-lateral .menu-salir{
+    margin-top:auto;
+    width:100%;
+    text-align:left;
+    padding:14px 24px;
+    background:none;
+    border:none;
+    border-top:1px solid #eee;
+    color:#b03a2e;
+    font-family:inherit;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+}
+.menu-lateral .menu-salir:hover{ background:#fdece9; }
+.usuario-actual #btnSalir{ display:none; }   /* ahora esta en el menu */
+
+/* ---------- "x" para borrar lo escrito en las barras de busqueda ---------- */
+.campo-con-borrar{
+    position:relative;
+    display:block;
+    width:100%;
+}
+.campo-con-borrar input[id^="buscar"]{ padding-right:34px; }
+.btn-borrar-busqueda{
+    display:none;
+    position:absolute;
+    top:50%;
+    right:6px;
+    transform:translateY(-50%);
+    width:24px;
+    height:24px;
+    padding:0;
+    border:none;
+    border-radius:50%;
+    background:#e6ece8;
+    color:#555;
+    font-size:17px;
+    line-height:1;
+    cursor:pointer;
+    align-items:center;
+    justify-content:center;
+}
+.btn-borrar-busqueda.visible{ display:flex; }
+.btn-borrar-busqueda:hover{ background:#d3ddd7; color:#222; }
+
+/* ---------- Punto de pendientes sobre el boton del menu (celular) ---------- */
+.btn-menu{ position:relative; }
+.btn-menu .punto-pendientes{
+    position:absolute;
+    top:-2px;
+    right:0;
+    min-width:17px;
+    height:17px;
+    padding:0 4px;
+    border-radius:999px;
+    background:#c0392b;
+    color:#fff;
+    font-size:10px;
+    font-weight:bold;
+    line-height:17px;
+    text-align:center;
+}
+.btn-menu .punto-pendientes:empty{ display:none; }
+
+/* ---------- La x de los buscadores: el cuadro ocupa todo su campo, asi la x queda dentro ---------- */
+.campo-con-borrar input[id^="buscar"]{
+    width:100%;
+    box-sizing:border-box;
+}
+/* Buscador de Restablecimiento de afiliados: mas largo */
+#seccionRestablecimiento .barra-filtros .campo-ancho{
+    flex:3 1 420px;
+    min-width:260px;
+}

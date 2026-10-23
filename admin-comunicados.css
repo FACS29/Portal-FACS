@@ -43,3 +43,24 @@
 }
 .destinatario-todos{ background:#eaf8ef; color:#006633; }
 .destinatario-uno{ background:#fff6e5; color:#8a6d00; }
+
+/* ---------- Responder un mensaje ---------- */
+#modalComunicado .modal-caja{
+    max-width:460px;
+    max-height:90vh;
+    overflow-y:auto;
+}
+.cita-original{
+    background:#f7f9f7;
+    border-left:4px solid #006633;
+    border-radius:8px;
+    padding:10px 12px;
+    margin-bottom:12px;
+}
+.cita-original-etiqueta{ font-size:12px; color:#5B6B62; font-weight:600; margin-bottom:4px; }
+.cita-original-fecha{ font-size:12px; color:#888; margin-bottom:6px; }
+.cita-original-texto{ font-size:13px; color:#333; line-height:1.5; white-space:pre-wrap; max-height:120px; overflow-y:auto; }
+.aviso.exito{ background:#eaf8ef; color:#006633; }
+
+/* La x del buscador de afiliado: reserva espacio a la derecha para que el texto no quede debajo */
+#formComunicado .campo-con-borrar input{ padding-right:34px; }

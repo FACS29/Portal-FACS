@@ -85,12 +85,33 @@ button[type="submit"]:disabled{ background:#9bbfa9; cursor:not-allowed; }
 .mensaje.error{ color:#b03a2e; }
 .mensaje.exito{ color:#006633; }
 
+/* Boton "Volver al Portal del Afiliados": mismo estilo que el boton
+   "Portal Administrativo" del portal de consultas (.enlace-admin en styles.css).
+   Para volver atras: borrar la regla activa y reponer el estilo anterior (abajo).
+   --- Estilo anterior ---
+   .volver{ display:inline-block; margin-top:22px; font-size:13px; color:#888; text-decoration:none; }
+   .volver:hover{ color:#006633; }
+*/
 .volver{
-    display:inline-block;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
     margin-top:22px;
-    font-size:13px;
-    color:#888;
+    padding:7px 14px;
+    border:1px solid #cfd8d3;
+    border-radius:999px;
+    background:#fff;
+    color:#4b5b52;
+    font-size:12px;
+    white-space:nowrap;
     text-decoration:none;
+    transition:border-color .2s, color .2s, background .2s;
 }
 
-.volver:hover{ color:#006633; }
+.volver:hover,
+.volver:focus-visible{
+    color:#006633;
+    border-color:#006633;
+    background:#eaf8ef;
+    text-decoration:none;
+}
