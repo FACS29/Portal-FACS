@@ -276,6 +276,14 @@ function mostrarBusqueda() {
     if (linkRecuperacion) {
         linkRecuperacion.style.display = 'none';
     }
+
+    // Ocultar el botón del buzón y borrar los datos de la consulta anterior:
+    // solo debe aparecer después de consultar un crédito.
+    const enlaceBuzonInicio = document.getElementById('enlaceBuzon');
+    if (enlaceBuzonInicio) {
+        enlaceBuzonInicio.style.display = 'none';
+        enlaceBuzonInicio.removeAttribute('href');
+    }
     
     // Cerrar todos los modales
     const modales = ['modalPrimeraConfiguracion', 'modalRecuperacion', 'modalSolicitarReset'];
@@ -764,7 +772,6 @@ function mostrarEnlaceRecuperacion(preguntaId) {
     linkRecuperacion.style.display = 'block';
     document.getElementById('enlaceRecuperarContraseña').onclick = (e) => {
         e.preventDefault();
-        linkRecuperacion.style.display = 'none';
         mostrarModalRecuperacion(preguntaId);
     };
 }
@@ -1022,13 +1029,14 @@ async function consultar() {
             return;
         }
         
-        // Mostrar campo de contraseña
+        // Mostrar campo de contraseña y, de una vez, la opción de recuperarla
         errorConsulta.style.display = 'none';
         if (inputContrasena) {
             inputContrasena.style.display = 'block';
             inputContrasena.value = '';
             inputContrasena.focus();
         }
+        mostrarEnlaceRecuperacion(afiliado.pregunta_secreta_id);
         return;
     }
     
@@ -1759,6 +1767,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             }
 
+        });
+
+    // Si cambian el documento cuando ya se ve el campo de contraseña o el enlace
+    // de recuperación, se vuelve a validar desde cero (evita recuperar la clave
+    // de otro documento).
+    document
+        .getElementById("documento")
+        .addEventListener("input", function () {
+            const campoClave = document.getElementById("contrasena");
+            const enlaceRecuperar = document.getElementById("linkRecuperacion");
+            const claveVisible = campoClave && campoClave.style.display !== "none";
+            const enlaceVisible = enlaceRecuperar && enlaceRecuperar.style.display === "block";
+            if (!claveVisible && !enlaceVisible) return;
+
+            if (campoClave) {
+                campoClave.value = "";
+                campoClave.style.display = "none";
+            }
+            if (enlaceRecuperar) enlaceRecuperar.style.display = "none";
+            mostrarAvisoConsultaInterna(false);
+            const errorDoc = document.getElementById("errorConsulta");
+            if (errorDoc) {
+                errorDoc.innerHTML = "";
+                errorDoc.style.display = "none";
+            }
+            intentosFallidos = 0;
         });
 
     // Agregar listener para ENTER en campo de contraseña
