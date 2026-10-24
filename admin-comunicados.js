@@ -24,6 +24,7 @@ let mensajeEnRespuestaId = null;
 let comunicadosCompletos = [];
 let afiliadosParaBuscar = [];
 let esSuperadmin = false;
+let puedeEscribir = false;   // administrador y superadministrador (el rol "consulta" solo lee)
 
 document.addEventListener("DOMContentLoaded", async () => {
     const sesion = await requerirSesion();
@@ -34,6 +35,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btnSalir").addEventListener("click", cerrarSesion);
 
     esSuperadmin = sesion.rol === "superadministrador";
+    puedeEscribir = esSuperadmin || sesion.rol === "administrador";
+    if (!puedeEscribir) {
+        const btnNuevo = document.getElementById("btnNuevoComunicado");
+        if (btnNuevo) btnNuevo.style.display = "none";
+    }
 
     // Ambas cargas son independientes -- van en paralelo en vez de
     // esperar una y luego la otra.
@@ -120,9 +126,9 @@ function renderizar() {
             </div>
             <p class="mensaje-texto">${escaparHtml(c.mensaje)}</p>
             <div class="mensaje-acciones">
-                <button data-accion="archivar" data-id="${c.id}">
+                ${puedeEscribir ? `<button data-accion="archivar" data-id="${c.id}">
                     ${c.activo ? "Archivar" : "Reactivar"}
-                </button>
+                </button>` : ""}
                 ${esSuperadmin ? `<button data-accion="eliminar" data-id="${c.id}" class="btn-eliminar">Eliminar</button>` : ""}
             </div>
         </div>
@@ -143,7 +149,7 @@ async function eliminarComunicado(id) {
     const { error } = await clienteAuth.from("Comunicados").delete().eq("id", id);
 
     if (error) {
-        alert("No se pudo eliminar (¿tienes rol de superadministrador?): " + error.message);
+        mostrarAvisoPanel("No se pudo eliminar (¿tienes rol de superadministrador?): " + error.message);
         return;
     }
 
@@ -217,6 +223,7 @@ function mostrarAvisoRespuesta(texto, exito) {
 }
 
 async function abrirRespuestaDesdeURL() {
+    if (!puedeEscribir) return;
     const id = Number(new URLSearchParams(window.location.search).get("responder"));
     if (!id) return;
     const { data: mensaje, error } = await clienteAuth
@@ -284,8 +291,22 @@ async function alternarActivo(id) {
         .update({ activo: !comunicado.activo })
         .eq("id", id);
 
-    if (error) { alert("No se pudo actualizar: " + error.message); return; }
+    if (error) { mostrarAvisoPanel("No se pudo actualizar: " + error.message); return; }
 
     comunicado.activo = !comunicado.activo;
     renderizar();
+}
+
+// Aviso dentro de la pagina (sin ventanas emergentes)
+function mostrarAvisoPanel(texto) {
+    let aviso = document.getElementById("avisoPanel");
+    if (!aviso) {
+        aviso = document.createElement("div");
+        aviso.id = "avisoPanel";
+        aviso.setAttribute("role", "alert");
+        aviso.style.cssText = "margin:10px 0;padding:10px 14px;border-radius:10px;border:1px solid #b03a2e;background:rgba(176,58,46,.12);font-size:14px;";
+        const lista = document.getElementById("listaComunicados");
+        lista.parentNode.insertBefore(aviso, lista);
+    }
+    aviso.textContent = texto;
 }

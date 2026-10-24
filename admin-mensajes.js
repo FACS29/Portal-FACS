@@ -27,6 +27,7 @@ function escaparHtml(texto) {
 
 let mensajesCompletos = [];
 let esSuperadmin = false;
+let puedeEscribir = false;   // administrador y superadministrador (el rol "consulta" solo lee)
 
 document.addEventListener("DOMContentLoaded", async () => {
     const sesion = await requerirSesion();
@@ -37,6 +38,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btnSalir").addEventListener("click", cerrarSesion);
 
     esSuperadmin = sesion.rol === "superadministrador";
+    puedeEscribir = esSuperadmin || sesion.rol === "administrador";
     instalarAccionesMensajes();
 
     await cargarMensajes();
@@ -98,16 +100,16 @@ function renderizar() {
             </div>
             <p class="mensaje-texto">${escaparHtml(m.mensaje)}</p>
             <div class="mensaje-acciones">
-                <button type="button" data-accion="responder" data-id="${m.id}" class="btn-responder"
+                ${puedeEscribir ? `<button type="button" data-accion="responder" data-id="${m.id}" class="btn-responder"
                     ${tieneDocumento(m) ? "" : 'disabled title="Este mensaje no trae documento, no se puede responder desde aqui"'}>
                     Responder
-                </button>
+                </button>` : ""}
                 <button type="button" data-accion="copiar" data-id="${m.id}" title="Copiar nombre, fecha y mensaje">
                     &#128203; Copiar
                 </button>
-                <button data-accion="leido" data-id="${m.id}">
+                ${puedeEscribir ? `<button data-accion="leido" data-id="${m.id}">
                     ${m.leido ? "Marcar como no leído" : "Marcar como leído"}
-                </button>
+                </button>` : ""}
                 ${esSuperadmin ? `<button data-accion="eliminar" data-id="${m.id}" class="btn-eliminar">Eliminar</button>` : ""}
             </div>
         </div>
@@ -188,7 +190,7 @@ async function alternarLeido(id) {
         .eq("id", id);
 
     if (error) {
-        alert("No se pudo actualizar: " + error.message);
+        mostrarAvisoPanel("No se pudo actualizar: " + error.message);
         return;
     }
 
@@ -203,11 +205,25 @@ async function eliminarMensaje(id) {
     const { error } = await clienteAuth.from("Mensajes").delete().eq("id", id);
 
     if (error) {
-        alert("No se pudo eliminar (¿tienes rol de superadministrador?): " + error.message);
+        mostrarAvisoPanel("No se pudo eliminar (¿tienes rol de superadministrador?): " + error.message);
         return;
     }
 
     mensajesCompletos = mensajesCompletos.filter((m) => m.id !== id);
     actualizarContador();
     renderizar();
+}
+
+// Aviso dentro de la pagina (sin ventanas emergentes)
+function mostrarAvisoPanel(texto) {
+    let aviso = document.getElementById("avisoPanel");
+    if (!aviso) {
+        aviso = document.createElement("div");
+        aviso.id = "avisoPanel";
+        aviso.setAttribute("role", "alert");
+        aviso.style.cssText = "margin:10px 0;padding:10px 14px;border-radius:10px;border:1px solid #b03a2e;background:rgba(176,58,46,.12);font-size:14px;";
+        const lista = document.getElementById("listaMensajes");
+        lista.parentNode.insertBefore(aviso, lista);
+    }
+    aviso.textContent = texto;
 }
